@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { formatBaht } from "@/lib/money";
 import type { CartLine } from "./actions";
 
@@ -8,6 +8,7 @@ type MenuItem = {
   id: string;
   name: string;
   price: number;
+  imageUrl: string | null;
   trackStock: boolean;
   stock: number;
 };
@@ -20,6 +21,13 @@ const STATUS_LABEL: Record<string, string> = {
   PREPARING: "กำลังทำ",
   SERVED: "เสิร์ฟแล้ว",
   CANCELLED: "ยกเลิก",
+};
+// which pill style each status gets — see DESIGN.md "Status pill" component
+const STATUS_CHIP: Record<string, string> = {
+  PENDING: "chip",
+  PREPARING: "chip",
+  SERVED: "chip chip-success",
+  CANCELLED: "chip chip-neutral",
 };
 
 export function OrderClient({
@@ -41,6 +49,11 @@ export function OrderClient({
   const [isPending, startTransition] = useTransition();
   const [justSubmitted, setJustSubmitted] = useState(false);
   const [unavailable, setUnavailable] = useState<string[]>([]);
+  const [activeGroupId, setActiveGroupId] = useState(menuGroups[0]?.id);
+
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const tabBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -65,6 +78,56 @@ export function OrderClient({
   }
   function maxQtyOf(item: MenuItem): number {
     return item.trackStock ? Math.max(0, stockOf(item)) : 50;
+  }
+
+  // Scroll-spy for the sticky category tabs (GrabFood-style menu nav): the
+  // active tab is whichever section's heading has most recently scrolled
+  // past the sticky header+tab-bar line. Plain scroll-position math reads
+  // more predictably here than IntersectionObserver's rootMargin band,
+  // which under-fires for short sections that scroll past quickly.
+  useEffect(() => {
+    const HEADER_OFFSET = 116; // sticky header + tab bar height
+    let ticking = false;
+
+    function updateActiveGroup() {
+      ticking = false;
+      let current = menuGroups[0]?.id;
+      for (const group of menuGroups) {
+        const el = sectionRefs.current[group.id];
+        if (!el) continue;
+        if (el.getBoundingClientRect().top <= HEADER_OFFSET + 1) {
+          current = group.id;
+        }
+      }
+      if (current) setActiveGroupId(current);
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(updateActiveGroup);
+    }
+
+    updateActiveGroup();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [menuGroups]);
+
+  useEffect(() => {
+    if (!activeGroupId) return;
+    tabRefs.current[activeGroupId]?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [activeGroupId]);
+
+  function scrollToGroup(id: string) {
+    setActiveGroupId(id);
+    const el = sectionRefs.current[id];
+    if (!el) return;
+    const y = el.getBoundingClientRect().top + window.scrollY - 104; // clear the sticky header + tab bar
+    window.scrollTo({ top: y, behavior: "smooth" });
   }
 
   const cartLines: CartLine[] = Object.entries(cart)
@@ -101,51 +164,84 @@ export function OrderClient({
   const openTotal = order?.items.reduce((sum, i) => sum + i.price * i.qty, 0) ?? 0;
 
   return (
-    <div className="max-w-2xl mx-auto pb-28">
-      <header className="p-4 bg-white border-b sticky top-0 z-10">
-        <h1 className="text-lg font-bold">{tableName}</h1>
-        <p className="text-sm text-gray-500">สแกนเพื่อสั่งอาหาร</p>
+    <div className="max-w-2xl mx-auto pb-32">
+      <header className="card rounded-none px-4 py-3.5 sticky top-0 z-10 flex items-baseline gap-2.5">
+        <h1 className="font-display font-medium text-2xl text-(--brand) leading-none">{tableName}</h1>
+        <p className="text-sm text-(--text-muted)">สแกนเพื่อสั่งอาหาร</p>
       </header>
 
+      {/* Sticky category tabs — jump to a section, active tab tracks scroll
+          position. The defining GrabFood-style menu-navigation pattern. */}
+      {menuGroups.length > 1 && (
+        <div
+          ref={tabBarRef}
+          className="sticky top-[57px] z-10 bg-(--background)/95 backdrop-blur-sm border-b border-(--surface-border) px-4 py-2 flex gap-2 overflow-x-auto scrollbar-none"
+        >
+          {menuGroups.map((group) => (
+            <button
+              key={group.id}
+              ref={(el) => {
+                tabRefs.current[group.id] = el;
+              }}
+              onClick={() => scrollToGroup(group.id)}
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                activeGroupId === group.id
+                  ? "bg-(--brand) text-(--brand-foreground)"
+                  : "bg-(--surface-muted) text-(--text-subtle)"
+              }`}
+            >
+              {group.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {order && order.items.length > 0 && (
-        <section className="p-4 bg-amber-50 border-b">
-          <h2 className="font-semibold mb-2">ออเดอร์ของคุณ</h2>
-          <ul className="space-y-1 text-sm">
+        <section className="mx-4 mt-4 card bg-(--chip-bg) p-4">
+          <h2 className="font-semibold mb-2 text-(--chip-foreground)">ออเดอร์ของคุณ</h2>
+          <ul className="space-y-2 text-sm">
             {order.items.map((item) => (
-              <li key={item.id} className="flex justify-between">
+              <li key={item.id} className="flex items-center justify-between gap-2">
                 <span>
-                  {item.name} x{item.qty}
+                  {item.name} <span className="text-(--text-muted)">x{item.qty}</span>
                 </span>
-                <span className="text-gray-500">
+                <span className={STATUS_CHIP[item.status] ?? "chip chip-neutral"}>
                   {STATUS_LABEL[item.status] ?? item.status}
                 </span>
               </li>
             ))}
           </ul>
-          <p className="text-right font-medium mt-2">
+          <p className="text-right font-semibold mt-3 pt-2 border-t border-(--surface-border)">
             รวม {formatBaht(openTotal)} บาท
           </p>
         </section>
       )}
 
       {justSubmitted && (
-        <div className="p-3 bg-green-100 text-green-700 text-center text-sm">
+        <div className="mx-4 mt-4 p-3 rounded-lg bg-green-100 text-green-700 text-center text-sm font-medium">
           ส่งออเดอร์แล้ว! ครัวกำลังเตรียมอาหารของคุณ
         </div>
       )}
 
       {unavailable.length > 0 && (
-        <div className="p-3 bg-red-100 text-red-700 text-center text-sm">
+        <div className="mx-4 mt-4 p-3 rounded-lg bg-red-100 text-red-700 text-center text-sm font-medium">
           ขออภัย {unavailable.join(", ")} หมดพอดี รายการนี้ไม่ถูกเพิ่มในออเดอร์
           (รายการอื่นในตะกร้าสั่งสำเร็จแล้ว)
         </div>
       )}
 
-      <main className="p-4 space-y-6">
+      <main className="p-4 space-y-7">
         {menuGroups.map((group) => (
-          <section key={group.id}>
-            <h2 className="font-semibold mb-2">{group.name}</h2>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <section
+            key={group.id}
+            ref={(el) => {
+              sectionRefs.current[group.id] = el;
+            }}
+            data-group-id={group.id}
+            className="scroll-mt-28"
+          >
+            <h2 className="font-display font-medium text-xl text-(--brand) mb-3">{group.name}</h2>
+            <ul className="space-y-3">
               {group.items.map((item) => {
                 const soldOut = isSoldOut(item);
                 const qty = cart[item.id] ?? 0;
@@ -153,32 +249,39 @@ export function OrderClient({
                 return (
                   <li
                     key={item.id}
-                    className={`bg-white rounded-xl shadow-sm p-3 flex items-center justify-between gap-2 ${
-                      soldOut ? "opacity-50" : ""
-                    }`}
+                    className={`card p-3 flex items-center gap-3 transition-shadow ${
+                      qty > 0 ? "ring-2 ring-(--brand)" : ""
+                    } ${soldOut ? "opacity-50" : ""}`}
                   >
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {formatBaht(item.price)} บาท
-                      </p>
-                      {soldOut && (
-                        <p className="text-xs text-red-600 font-medium">หมด</p>
-                      )}
+                    {item.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.imageUrl}
+                        alt=""
+                        className="w-16 h-16 rounded-lg object-cover shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{item.name}</p>
+                      <p className="text-sm text-(--text-muted)">{formatBaht(item.price)} บาท</p>
+                      {soldOut && <p className="text-xs text-red-600 font-medium">หมด</p>}
                     </div>
                     {!soldOut && (
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={() => setQty(item, qty - 1)}
-                          className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
+                          disabled={qty === 0}
+                          aria-label={`ลด ${item.name}`}
+                          className="w-10 h-10 rounded-full bg-(--surface-muted) font-bold text-lg disabled:opacity-40"
                         >
-                          -
+                          −
                         </button>
-                        <span className="w-6 text-center">{qty}</span>
+                        <span className="w-6 text-center font-medium tabular-nums">{qty}</span>
                         <button
                           onClick={() => setQty(item, qty + 1)}
                           disabled={atMax}
-                          className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg disabled:opacity-30"
+                          aria-label={`เพิ่ม ${item.name}`}
+                          className="w-10 h-10 rounded-full bg-(--brand) text-(--brand-foreground) font-bold text-lg disabled:opacity-40"
                         >
                           +
                         </button>
@@ -191,20 +294,22 @@ export function OrderClient({
           </section>
         ))}
         {menuGroups.length === 0 && (
-          <p className="text-center text-gray-400">ยังไม่มีเมนูให้สั่ง</p>
+          <p className="text-center text-(--text-muted-2)">ยังไม่มีเมนูให้สั่ง</p>
         )}
       </main>
 
       {cartCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 max-w-2xl mx-auto">
-          <button
-            onClick={handleSubmit}
-            disabled={isPending}
-            className="w-full bg-black text-white rounded-xl py-3 font-semibold flex justify-between px-4 disabled:opacity-50"
-          >
-            <span>สั่งอาหาร ({cartCount})</span>
-            <span>{formatBaht(cartTotal)} บาท</span>
-          </button>
+        <div className="fixed bottom-0 left-0 right-0 z-20">
+          <div className="max-w-2xl mx-auto p-4">
+            <button
+              onClick={handleSubmit}
+              disabled={isPending}
+              className="w-full bg-(--brand) text-(--brand-foreground) rounded-xl py-3.5 font-semibold flex justify-between px-5 shadow-[0_10px_30px_rgb(0_0_0_/_0.2)] disabled:opacity-50"
+            >
+              <span>สั่งอาหาร ({cartCount})</span>
+              <span>{formatBaht(cartTotal)} บาท</span>
+            </button>
+          </div>
         </div>
       )}
     </div>

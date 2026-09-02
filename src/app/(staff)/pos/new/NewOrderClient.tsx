@@ -75,7 +75,7 @@ export function NewOrderClient({
         <button
           onClick={() => setType("TAKEAWAY")}
           className={`flex-1 rounded-lg py-2 font-medium ${
-            type === "TAKEAWAY" ? "bg-black text-white" : "bg-white border"
+            type === "TAKEAWAY" ? "bg-(--brand) text-(--brand-foreground)" : "bg-(--surface) border"
           }`}
         >
           กลับบ้าน
@@ -83,7 +83,7 @@ export function NewOrderClient({
         <button
           onClick={() => setType("DINE_IN")}
           className={`flex-1 rounded-lg py-2 font-medium ${
-            type === "DINE_IN" ? "bg-black text-white" : "bg-white border"
+            type === "DINE_IN" ? "bg-(--brand) text-(--brand-foreground)" : "bg-(--surface) border"
           }`}
         >
           นั่งทานที่ร้าน (ไม่ผ่าน QR)
@@ -101,13 +101,13 @@ export function NewOrderClient({
               return (
                 <li
                   key={item.id}
-                  className={`bg-white rounded-xl shadow-sm p-3 flex items-center justify-between gap-2 ${
+                  className={`card p-3 flex items-center justify-between gap-2 ${
                     soldOut ? "opacity-50" : ""
                   }`}
                 >
                   <div>
                     <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-500">{formatBaht(item.price)} บาท</p>
+                    <p className="text-sm text-(--text-muted)">{formatBaht(item.price)} บาท</p>
                     {soldOut && <p className="text-xs text-red-600 font-medium">หมด</p>}
                     {!soldOut && item.trackStock && item.stock <= 5 && (
                       <p className="text-xs text-amber-600">เหลือ {item.stock}</p>
@@ -117,7 +117,7 @@ export function NewOrderClient({
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => setQty(item, qty - 1)}
-                        className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
+                        className="w-10 h-10 rounded-full bg-(--surface-muted) font-bold text-lg"
                       >
                         -
                       </button>
@@ -125,7 +125,7 @@ export function NewOrderClient({
                       <button
                         onClick={() => setQty(item, qty + 1)}
                         disabled={atMax}
-                        className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg disabled:opacity-30"
+                        className="w-10 h-10 rounded-full bg-(--surface-muted) font-bold text-lg disabled:opacity-30"
                       >
                         +
                       </button>
@@ -139,11 +139,11 @@ export function NewOrderClient({
       ))}
 
       {lines.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 max-w-2xl mx-auto">
+        <div className="fixed bottom-0 left-0 right-0 bg-(--surface) border-t p-4 max-w-2xl mx-auto">
           <button
             onClick={handleCreate}
             disabled={isPending}
-            className="w-full bg-black text-white rounded-xl py-3 font-semibold flex justify-between px-4 disabled:opacity-50"
+            className="w-full bg-(--brand) text-(--brand-foreground) rounded-xl py-3 font-semibold flex justify-between px-4 disabled:opacity-50"
           >
             <span>สร้างออเดอร์</span>
             <span>{formatBaht(total)} บาท</span>

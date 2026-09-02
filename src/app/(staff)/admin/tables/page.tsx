@@ -1,6 +1,7 @@
 import QRCode from "qrcode";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import { createTable, deleteTable, regenerateTableToken } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -27,13 +28,13 @@ export default async function TablesAdminPage() {
         <h1 className="text-2xl font-bold">จัดการโต๊ะ / QR code สั่งอาหาร</h1>
         <Link
           href="/admin/tables/print"
-          className="bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm font-medium text-center"
+          className="bg-(--accent) text-white rounded-lg px-4 py-2.5 text-sm font-medium text-center"
         >
           พิมพ์ QR ทุกโต๊ะ
         </Link>
       </div>
 
-      <section className="bg-white rounded-xl shadow p-4">
+      <section className="card p-4">
         <form action={createTable} className="flex gap-2">
           <input
             name="name"
@@ -41,7 +42,7 @@ export default async function TablesAdminPage() {
             required
             className="flex-1 border rounded-lg px-3 py-2"
           />
-          <button className="bg-black text-white rounded-lg px-4 py-2 font-medium">
+          <button className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2 font-medium">
             เพิ่มโต๊ะ
           </button>
         </form>
@@ -49,36 +50,43 @@ export default async function TablesAdminPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {tablesWithQr.map((table) => (
-          <div key={table.id} className="bg-white rounded-xl shadow p-4 space-y-2 text-center">
+          <div key={table.id} className="card p-4 space-y-2 text-center">
             <h2 className="font-semibold">{table.name}</h2>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={table.qrDataUrl} alt={`QR code ${table.name}`} className="mx-auto" />
-            <p className="text-xs text-gray-400 break-all">{table.orderUrl}</p>
+            <p className="text-xs text-(--text-muted-2) break-all">{table.orderUrl}</p>
             <div className="flex justify-center gap-3 text-sm pt-1">
-              <form
+              <ConfirmButton
                 action={async () => {
                   "use server";
                   await regenerateTableToken(table.id);
                 }}
+                tone="warning"
+                confirmTitle="สร้าง QR ใหม่"
+                confirmMessage={`QR เดิมของ "${table.name}" ที่พิมพ์ไว้จะใช้ไม่ได้ทันที ต้องพิมพ์แผ่นใหม่ไปแปะแทน — ยืนยัน?`}
+                confirmLabel="สร้าง QR ใหม่"
+                className="text-amber-600 hover:underline"
               >
-                <button className="text-amber-600 hover:underline">
-                  สร้าง QR ใหม่
-                </button>
-              </form>
-              <form
+                สร้าง QR ใหม่
+              </ConfirmButton>
+              <ConfirmButton
                 action={async () => {
                   "use server";
                   await deleteTable(table.id);
                 }}
+                confirmTitle="ลบโต๊ะ"
+                confirmMessage={`ลบ "${table.name}"? ลบแล้วกู้คืนไม่ได้ (ลบไม่ได้ถ้ายังมีออเดอร์ค้างอยู่)`}
+                confirmLabel="ลบโต๊ะ"
+                className="text-red-600 hover:underline"
               >
-                <button className="text-red-600 hover:underline">ลบโต๊ะ</button>
-              </form>
+                ลบโต๊ะ
+              </ConfirmButton>
             </div>
           </div>
         ))}
       </div>
       {tables.length === 0 && (
-        <p className="text-sm text-gray-400">ยังไม่มีโต๊ะ เพิ่มโต๊ะแรกด้านบน</p>
+        <p className="text-sm text-(--text-muted-2)">ยังไม่มีโต๊ะ เพิ่มโต๊ะแรกด้านบน</p>
       )}
     </div>
   );

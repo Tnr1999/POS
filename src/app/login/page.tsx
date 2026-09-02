@@ -8,11 +8,19 @@ export default async function LoginPage({
   const { from, error } = await searchParams;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <form
-        action={login}
-        className="w-full max-w-sm bg-white rounded-xl shadow p-6 space-y-4"
+    <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-(--background) px-4">
+      <div
+        aria-hidden
+        className="w-14 h-14 rounded-2xl bg-(--brand) text-(--brand-foreground) flex items-center justify-center shadow-[0_10px_30px_rgb(0_0_0_/_0.15)]"
       >
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 2v7c0 1.1.9 2 2 2h1a2 2 0 0 0 2-2V2" />
+          <path d="M7 2v20" />
+          <path d="M17 2c-2 2-2 5-2 8a2 2 0 0 0 2 2c0-3 0-6-2-8" />
+          <path d="M17 12v10" />
+        </svg>
+      </div>
+      <form action={login} className="w-full max-w-sm card p-6 space-y-4">
         <h1 className="text-xl font-bold text-center">เข้าสู่ระบบพนักงาน</h1>
         <input type="hidden" name="from" value={from ?? "/pos"} />
 
@@ -35,7 +43,7 @@ export default async function LoginPage({
 
         <button
           type="submit"
-          className="w-full bg-black text-white rounded-lg py-2 font-medium"
+          className="w-full bg-(--brand) text-(--brand-foreground) rounded-lg py-2 font-medium"
         >
           เข้าสู่ระบบ
         </button>

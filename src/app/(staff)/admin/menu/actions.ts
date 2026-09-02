@@ -29,12 +29,13 @@ export async function createMenuItem(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const priceBaht = Number(formData.get("price"));
   const categoryId = String(formData.get("categoryId") ?? "") || null;
+  const imageUrl = String(formData.get("imageUrl") ?? "").trim() || null;
   const trackStock = formData.get("trackStock") === "on";
   const stock = Math.max(0, Math.trunc(Number(formData.get("stock")) || 0));
   if (!name || !Number.isFinite(priceBaht) || priceBaht < 0) return;
 
   await prisma.menuItem.create({
-    data: { name, price: toSatang(priceBaht), categoryId, trackStock, stock },
+    data: { name, price: toSatang(priceBaht), categoryId, imageUrl, trackStock, stock },
   });
   revalidatePath("/admin/menu");
   revalidatePath("/pos");
@@ -46,6 +47,7 @@ export async function updateMenuItem(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const priceBaht = Number(formData.get("price"));
   const categoryId = String(formData.get("categoryId") ?? "") || null;
+  const imageUrl = String(formData.get("imageUrl") ?? "").trim() || null;
   const trackStock = formData.get("trackStock") === "on";
   const stock = Math.max(0, Math.trunc(Number(formData.get("stock")) || 0));
   if (!id || !name || !Number.isFinite(priceBaht) || priceBaht < 0) return;
@@ -56,7 +58,7 @@ export async function updateMenuItem(formData: FormData) {
 
     await tx.menuItem.update({
       where: { id },
-      data: { name, price: toSatang(priceBaht), categoryId, trackStock, stock },
+      data: { name, price: toSatang(priceBaht), categoryId, imageUrl, trackStock, stock },
     });
 
     const diff = stock - existing.stock;

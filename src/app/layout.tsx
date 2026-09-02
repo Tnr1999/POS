@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono, Kanit } from "next/font/google";
+import { Toaster } from "@/components/Toast";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,19 +13,36 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Display face for the customer-facing order page only (shop name, menu
+// section headers) — see DESIGN.md "The Two-Places Rule". Thai + Latin.
+// Kanit — clean geometric sans, simple/modern rather than a decorative
+// display face (swapped from Chonburi per feedback: "เรียบง่าย").
+const kanit = Kanit({
+  variable: "--font-kanit",
+  weight: ["500", "600"],
+  subsets: ["latin", "thai"],
+});
+
 export const metadata: Metadata = {
   title: "ร้านค้า POS",
   description: "ระบบขายหน้าร้าน + สั่งอาหารผ่าน QR code",
+};
+
+export const viewport: Viewport = {
+  // lets the browser theme its own chrome (scrollbar, form controls) to
+  // match — the page itself follows prefers-color-scheme via globals.css
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="th"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${kanit.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
+      <body className="min-h-full flex flex-col">
         {children}
+        <Toaster />
       </body>
     </html>
   );

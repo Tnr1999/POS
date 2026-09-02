@@ -2,8 +2,78 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { formatBaht } from "@/lib/money";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { toast } from "@/components/Toast";
+
+const NEW_ORDER_HIGHLIGHT_MS = 15000;
+
+/** Two short beeps via Web Audio — no external asset needed. Browsers block
+ *  audio until a user gesture, so the context is created lazily on the
+ *  first click/tap anywhere on the page (see useNewOrderAlert below). */
+function playNewOrderBeep(ctx: AudioContext) {
+  const now = ctx.currentTime;
+  [0, 0.22].forEach((offset) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.0001, now + offset);
+    gain.gain.exponentialRampToValueAtTime(0.2, now + offset + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.18);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now + offset);
+    osc.stop(now + offset + 0.2);
+  });
+}
+
+/** Tracks which order ids are "new since last poll" so the board can ring +
+ *  highlight them, without needing a real push/websocket channel. */
+function useNewOrderAlert(orders: Order[]) {
+  const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const knownIds = useRef<Set<string> | null>(null);
+  const audioCtx = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    function unlockAudio() {
+      audioCtx.current ??= new AudioContext();
+    }
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", unlockAudio);
+  }, []);
+
+  useEffect(() => {
+    const currentIds = new Set(orders.map((o) => o.id));
+    if (knownIds.current === null) {
+      // first render — nothing "new" yet, just record the baseline
+      knownIds.current = currentIds;
+      return;
+    }
+    const arrived = orders.filter((o) => !knownIds.current!.has(o.id));
+    knownIds.current = currentIds;
+    if (arrived.length === 0) return;
+
+    if (audioCtx.current) playNewOrderBeep(audioCtx.current);
+    toast(
+      arrived.length === 1
+        ? `ออเดอร์ใหม่: ${arrived[0].tableName ?? (arrived[0].type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}`
+        : `มีออเดอร์ใหม่ ${arrived.length} ออเดอร์`
+    );
+    setNewIds((prev) => new Set([...prev, ...arrived.map((o) => o.id)]));
+    arrived.forEach((o) => {
+      setTimeout(() => {
+        setNewIds((prev) => {
+          const next = new Set(prev);
+          next.delete(o.id);
+          return next;
+        });
+      }, NEW_ORDER_HIGHLIGHT_MS);
+    });
+  }, [orders]);
+
+  return newIds;
+}
 
 type OrderItem = { id: string; name: string; price: number; qty: number; status: string };
 type Order = {
@@ -43,6 +113,7 @@ export function PosBoard({
   const [orders, setOrders] = useState(initialOrders);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const newOrderIds = useNewOrderAlert(orders);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -60,23 +131,23 @@ export function PosBoard({
 
   function handleAdvance(orderItemId: string) {
     startTransition(async () => {
-      await advanceOrderItemStatus(orderItemId);
-      router.refresh();
+      try {
+        await advanceOrderItemStatus(orderItemId);
+        router.refresh();
+      } catch (err) {
+        toast(err instanceof Error ? err.message : "อัปเดตสถานะไม่สำเร็จ", "error");
+      }
     });
   }
 
   function handlePay(orderId: string) {
     startTransition(async () => {
-      await payOrder(orderId);
-      router.push(`/receipt/${orderId}`);
-    });
-  }
-
-  function handleCancel(orderId: string) {
-    if (!confirm("ยกเลิกออเดอร์นี้?")) return;
-    startTransition(async () => {
-      await cancelOrder(orderId);
-      router.refresh();
+      try {
+        await payOrder(orderId);
+        router.push(`/receipt/${orderId}`);
+      } catch (err) {
+        toast(err instanceof Error ? err.message : "ชำระเงินไม่สำเร็จ", "error");
+      }
     });
   }
 
@@ -86,7 +157,7 @@ export function PosBoard({
         <h1 className="text-2xl font-bold">ออเดอร์ที่เปิดอยู่</h1>
         <Link
           href="/pos/new"
-          className="bg-black text-white rounded-lg px-4 py-2.5 text-sm font-medium text-center"
+          className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2.5 text-sm font-medium text-center"
         >
           + ออเดอร์ใหม่ (หน้าร้าน/กลับบ้าน)
         </Link>
@@ -95,13 +166,24 @@ export function PosBoard({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {orders.map((order) => {
           const total = order.items.reduce((sum, i) => sum + i.price * i.qty, 0);
+          const isNew = newOrderIds.has(order.id);
           return (
-            <div key={order.id} className="bg-white rounded-xl shadow p-4 space-y-3">
+            <div
+              key={order.id}
+              className={`card p-4 space-y-3 transition-shadow ${
+                isNew ? "ring-2 ring-amber-500 animate-pulse" : ""
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold">
+                <h2 className="font-semibold flex items-center gap-2">
                   {order.tableName ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}
+                  {isNew && (
+                    <span className="text-xs font-medium text-amber-600 bg-amber-50 rounded-full px-2 py-0.5">
+                      ใหม่
+                    </span>
+                  )}
                 </h2>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-(--text-muted-2)">
                   {new Date(order.createdAt).toLocaleTimeString("th-TH", {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -121,7 +203,7 @@ export function PosBoard({
                       <button
                         disabled={isPending}
                         onClick={() => handleAdvance(item.id)}
-                        className="text-xs bg-gray-100 rounded-full px-3 py-2 shrink-0 disabled:opacity-50"
+                        className="text-xs bg-(--surface-muted) rounded-full px-3 py-2 shrink-0 disabled:opacity-50"
                       >
                         {ITEM_STATUS_LABEL[item.status]} → {NEXT_STATUS_LABEL[item.status]}
                       </button>
@@ -129,7 +211,7 @@ export function PosBoard({
                   </li>
                 ))}
                 {order.items.length === 0 && (
-                  <li className="text-gray-400">ยังไม่มีรายการ</li>
+                  <li className="text-(--text-muted-2)">ยังไม่มีรายการ</li>
                 )}
               </ul>
 
@@ -143,17 +225,20 @@ export function PosBoard({
               <div className="flex flex-col gap-2 pt-2 border-t">
                 <span className="font-semibold">รวม {formatBaht(total)} บาท</span>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => handleCancel(order.id)}
-                    disabled={isPending}
+                  <ConfirmButton
+                    action={() => cancelOrder(order.id)}
+                    confirmTitle="ยกเลิกออเดอร์"
+                    confirmMessage={`ยกเลิกออเดอร์ของ${order.tableName ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}? ลบแล้วกู้คืนไม่ได้`}
+                    confirmLabel="ยกเลิกออเดอร์"
                     className="text-sm text-red-600 disabled:opacity-50 px-2"
+                    onSuccess={() => router.refresh()}
                   >
                     ยกเลิก
-                  </button>
+                  </ConfirmButton>
                   <button
                     onClick={() => handlePay(order.id)}
                     disabled={isPending || order.items.length === 0}
-                    className="flex-1 bg-black text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                    className="flex-1 bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
                   >
                     ชำระเงิน / พิมพ์บิล
                   </button>
@@ -165,7 +250,7 @@ export function PosBoard({
       </div>
 
       {orders.length === 0 && (
-        <p className="text-gray-400 text-center py-8">ยังไม่มีออเดอร์ที่เปิดอยู่</p>
+        <p className="text-(--text-muted-2) text-center py-8">ยังไม่มีออเดอร์ที่เปิดอยู่</p>
       )}
     </div>
   );
@@ -214,12 +299,16 @@ function AddItemPicker({
         disabled={isPending || !menuItemId}
         onClick={() =>
           startTransition(async () => {
-            await addItemToOrder(orderId, menuItemId, qty);
-            setQty(1);
-            onAdded();
+            try {
+              await addItemToOrder(orderId, menuItemId, qty);
+              setQty(1);
+              onAdded();
+            } catch (err) {
+              toast(err instanceof Error ? err.message : "เพิ่มรายการไม่สำเร็จ", "error");
+            }
           })
         }
-        className="bg-gray-800 text-white rounded-lg px-4 py-2 disabled:opacity-50"
+        className="bg-(--accent) text-white rounded-lg px-4 py-2 disabled:opacity-50"
       >
         เพิ่ม
       </button>

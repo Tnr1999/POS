@@ -28,15 +28,15 @@ export default async function StockPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">คลังสินค้า / สต็อก</h1>
-        <Link href="/admin/menu" className="text-sm text-gray-600 hover:underline">
+        <Link href="/admin/menu" className="text-sm text-(--text-muted) hover:underline">
           จัดการเมนู →
         </Link>
       </div>
 
-      <section className="bg-white rounded-xl shadow p-4 space-y-3">
+      <section className="card p-4 space-y-3">
         <h2 className="font-semibold">สต็อกปัจจุบัน</h2>
         {trackedItems.length === 0 && (
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-(--text-muted-2)">
             ยังไม่มีเมนูที่เปิดใช้การตัดสต็อก ไปเปิดได้ที่{" "}
             <Link href="/admin/menu" className="underline">
               จัดการเมนู
@@ -44,14 +44,14 @@ export default async function StockPage() {
             (ติ๊ก &quot;ตัดสต็อก&quot; ในแต่ละเมนู)
           </p>
         )}
-        <ul className="divide-y">
+        <ul className="divide-y divide-(--surface-border)">
           {trackedItems.map((item) => (
             <li key={item.id} className="py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div className="flex-1">
                 <p className="font-medium">{item.name}</p>
                 <p
                   className={`text-sm ${
-                    item.stock <= 5 ? "text-red-600 font-medium" : "text-gray-500"
+                    item.stock <= 5 ? "text-red-600 font-medium" : "text-(--text-muted)"
                   }`}
                 >
                   เหลือ {item.stock} ชิ้น {item.stock <= 5 && "(ใกล้หมด)"}
@@ -72,7 +72,7 @@ export default async function StockPage() {
                   placeholder="หมายเหตุ (ไม่บังคับ)"
                   className="border rounded-lg px-3 py-2 flex-1 min-w-[120px]"
                 />
-                <button className="bg-black text-white rounded-lg px-4 py-2 text-sm font-medium">
+                <button className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2 text-sm font-medium">
                   บันทึก
                 </button>
               </form>
@@ -81,17 +81,17 @@ export default async function StockPage() {
         </ul>
       </section>
 
-      <section className="bg-white rounded-xl shadow p-4 space-y-3">
+      <section className="card p-4 space-y-3">
         <h2 className="font-semibold">ประวัติการเคลื่อนไหวล่าสุด</h2>
-        <ul className="divide-y text-sm">
+        <ul className="divide-y divide-(--surface-border) text-sm">
           {movements.map((m) => (
             <li key={m.id} className="py-2 flex justify-between gap-2">
               <div>
                 <p>
                   {m.menuItem.name} — {MOVEMENT_LABEL[m.type] ?? m.type}
-                  {m.note && <span className="text-gray-400"> ({m.note})</span>}
+                  {m.note && <span className="text-(--text-muted-2)"> ({m.note})</span>}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-(--text-muted-2)">
                   {m.createdAt.toLocaleString("th-TH")}
                 </p>
               </div>
@@ -108,7 +108,7 @@ export default async function StockPage() {
           ))}
         </ul>
         {movements.length === 0 && (
-          <p className="text-sm text-gray-400">ยังไม่มีความเคลื่อนไหว</p>
+          <p className="text-sm text-(--text-muted-2)">ยังไม่มีความเคลื่อนไหว</p>
         )}
       </section>
     </div>
