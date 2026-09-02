@@ -22,7 +22,7 @@
   --surface-muted: #f5ecdc; /* soft accents: qty steppers, hover states */
   --surface-border: #ece0cc; /* borders on top of --surface */
   --text-muted: #6b7280; /* secondary text (was text-gray-500) */
-  --text-muted-2: #9ca3af; /* tertiary/placeholder text (was text-gray-400) */
+  --text-muted-2: #757575; /* tertiary/placeholder text — 4.6:1 on white, meets the same 4.5:1 floor as body text */
   --text-subtle: #374151; /* slightly dimmed body text (was text-gray-600/700) */
   --accent: #1f2937; /* secondary dark button ("print", "add", "save") */
   --accent-hover: #111827;
@@ -34,6 +34,13 @@
   /* status pill background for "new"/highlight chips only */
   --chip-bg: #fdece3;
   --chip-foreground: #8f3009;
+  /* semantic text colors — plain Tailwind green-600/amber-600/red-600 fail
+     4.5:1 on white/cream in several spots (checked during QA pass), and
+     none of them had a dark-mode counterpart at all. These are tuned per
+     mode instead of reused as literal button-background colors. */
+  --text-success: #15803d; /* green-700 — 5.0:1 on white, 4.5:1 on cream */
+  --text-warning: #b45309; /* amber-700 — 5.0:1 on white, 4.6:1 on cream */
+  --text-danger: #b91c1c; /* red-700 — 6.5:1 on white, 5.9:1 on cream */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -44,7 +51,7 @@
     --surface-muted: #27272a;
     --surface-border: #3f3f46;
     --text-muted: #a1a1aa;
-    --text-muted-2: #71717a;
+    --text-muted-2: #8a8a8a; /* 5.1:1 on --surface — the previous #71717a was only 3.7:1 */
     --text-subtle: #d4d4d8;
     --accent: #3f3f46;
     --accent-hover: #52525b;
@@ -57,6 +64,9 @@
     --brand-hover: #ffddc9;
     --chip-bg: rgba(193, 68, 14, 0.18);
     --chip-foreground: #f3a077;
+    --text-success: #4ade80; /* green-400 — 10.2:1 on dark surface */
+    --text-warning: #fbbf24; /* amber-400 — 10.6:1 on dark surface */
+    --text-danger: #f87171; /* red-400 — 6.4:1 on dark surface */
   }
 }
 
@@ -124,7 +134,18 @@ button {
 
 .chip-success {
   background: rgba(22, 163, 74, 0.15);
-  color: #16a34a;
+  color: #0f7a37; /* 4.65:1 on its own tinted bg — plain green-600 (#16a34a) was only 2.8:1 */
+}
+
+@media (prefers-color-scheme: dark) {
+  .chip-success {
+    color: #34d399; /* lighter green needed against the darker tinted bg in dark mode */
+  }
+}
+
+.chip-warning {
+  background: rgba(217, 119, 6, 0.15);
+  color: var(--text-warning);
 }
 
 .chip-neutral {

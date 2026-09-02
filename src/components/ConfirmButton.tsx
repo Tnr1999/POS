@@ -7,7 +7,9 @@ type Tone = "danger" | "warning" | "neutral";
 
 const TONE_CLASSES: Record<Tone, string> = {
   danger: "bg-red-600 hover:bg-red-700",
-  warning: "bg-amber-600 hover:bg-amber-700",
+  // amber-600 only gives white button text 3.2:1 contrast — amber-700 clears
+  // the 4.5:1 floor while still reading as "warning" (found during QA pass)
+  warning: "bg-amber-700 hover:bg-amber-800",
   neutral: "bg-(--accent) hover:bg-(--accent-hover)",
 };
 
@@ -24,7 +26,7 @@ export function ConfirmButton({
   confirmLabel = "ยืนยัน",
   cancelLabel = "ยกเลิก",
   tone = "danger",
-  className = "text-sm text-red-600 hover:underline",
+  className = "text-sm text-(--text-danger) hover:underline",
   children,
   onSuccess,
 }: {

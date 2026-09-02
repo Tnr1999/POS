@@ -223,6 +223,10 @@ export function OrderClient({
                       <img
                         src={item.imageUrl}
                         alt=""
+                        loading="lazy"
+                        decoding="async"
+                        width={64}
+                        height={64}
                         className="w-16 h-16 rounded-lg object-cover shrink-0"
                       />
                     )}

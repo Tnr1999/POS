@@ -9,7 +9,7 @@ export default function StaffError({
 }) {
   return (
     <div className="max-w-md mx-auto mt-16 card p-6 text-center space-y-4">
-      <p className="text-red-600 font-medium">{error.message || "เกิดข้อผิดพลาด"}</p>
+      <p className="text-(--text-danger) font-medium">{error.message || "เกิดข้อผิดพลาด"}</p>
       <button
         onClick={reset}
         className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2 font-medium"

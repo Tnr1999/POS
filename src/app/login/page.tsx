@@ -25,7 +25,7 @@ export default async function LoginPage({
         <input type="hidden" name="from" value={from ?? "/pos"} />
 
         {error && (
-          <p className="text-red-600 text-sm text-center">
+          <p className="text-(--text-danger) text-sm text-center">
             รหัสผ่านไม่ถูกต้อง
           </p>
         )}

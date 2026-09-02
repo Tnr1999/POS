@@ -26,7 +26,7 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
         <form action={logout} className="shrink-0">
           <button
             type="submit"
-            className="px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"
+            className="px-3 py-2 rounded-lg text-sm font-medium text-(--text-danger) hover:bg-(--surface-muted)"
           >
             ออกจากระบบ
           </button>
