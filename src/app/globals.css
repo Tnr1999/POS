@@ -130,6 +130,13 @@ button {
   color: var(--text-subtle);
 }
 
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 .no-print {
   display: block;
 }

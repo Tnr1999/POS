@@ -29,10 +29,11 @@ export async function createMenuItem(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const priceBaht = Number(formData.get("price"));
   const categoryId = String(formData.get("categoryId") ?? "") || null;
+  const imageUrl = String(formData.get("imageUrl") ?? "").trim() || null;
   if (!name || !Number.isFinite(priceBaht) || priceBaht < 0) return;
 
   await prisma.menuItem.create({
-    data: { name, price: toSatang(priceBaht), categoryId },
+    data: { name, price: toSatang(priceBaht), categoryId, imageUrl },
   });
   revalidatePath("/admin/menu");
   revalidatePath("/pos");
@@ -44,11 +45,12 @@ export async function updateMenuItem(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const priceBaht = Number(formData.get("price"));
   const categoryId = String(formData.get("categoryId") ?? "") || null;
+  const imageUrl = String(formData.get("imageUrl") ?? "").trim() || null;
   if (!id || !name || !Number.isFinite(priceBaht) || priceBaht < 0) return;
 
   await prisma.menuItem.update({
     where: { id },
-    data: { name, price: toSatang(priceBaht), categoryId },
+    data: { name, price: toSatang(priceBaht), categoryId, imageUrl },
   });
   revalidatePath("/admin/menu");
   revalidatePath("/pos");
