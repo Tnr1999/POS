@@ -57,7 +57,7 @@ export default async function ReportsPage({
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">รายงานยอดขาย</h1>
+      <h1 className="page-title text-2xl font-bold">รายงานยอดขาย</h1>
 
       <form className="flex flex-wrap items-end gap-3 card p-4">
         <div>
@@ -86,11 +86,11 @@ export default async function ReportsPage({
       <div className="grid grid-cols-2 gap-4">
         <div className="card p-4">
           <p className="text-sm text-(--text-muted)">ยอดขายรวม</p>
-          <p className="text-2xl font-bold">{formatBaht(totalRevenue)} บาท</p>
+          <p className="text-2xl font-bold text-(--brand)">{formatBaht(totalRevenue)} บาท</p>
         </div>
         <div className="card p-4">
           <p className="text-sm text-(--text-muted)">จำนวนบิล</p>
-          <p className="text-2xl font-bold">{paidOrders.length}</p>
+          <p className="text-2xl font-bold text-(--brand)">{paidOrders.length}</p>
         </div>
       </div>
 

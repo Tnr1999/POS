@@ -47,9 +47,9 @@
   :root {
     --background: #0a0a0a;
     --foreground: #e5e7eb;
-    --surface: #18181b;
-    --surface-muted: #27272a;
-    --surface-border: #3f3f46;
+    --surface: #201f24; /* lightened from #18181b — was barely distinguishable from --background */
+    --surface-muted: #2c2b31;
+    --surface-border: #4a4952; /* lightened from #3f3f46 for a clearer card outline */
     --text-muted: #a1a1aa;
     --text-muted-2: #8a8a8a; /* 5.1:1 on --surface — the previous #71717a was only 3.7:1 */
     --text-subtle: #d4d4d8;
@@ -151,6 +151,25 @@ button {
 .chip-neutral {
   background: var(--surface-muted);
   color: var(--text-subtle);
+}
+
+/* Small brand-colored accent bar in front of every page title — the one
+   piece of "this is the same app" visual glue tying the plain/functional
+   staff screens to the customer-facing terracotta identity, without
+   switching type (staff screens stay in Geist Sans; see the Two-Places
+   Rule for the display face). */
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page-title::before {
+  content: "";
+  width: 4px;
+  height: 1.4em;
+  flex-shrink: 0;
+  background: var(--brand);
+  border-radius: 2px;
 }
 
 .scrollbar-none {

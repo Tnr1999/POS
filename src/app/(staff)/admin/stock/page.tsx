@@ -27,7 +27,7 @@ export default async function StockPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">คลังสินค้า / สต็อก</h1>
+        <h1 className="page-title text-2xl font-bold">คลังสินค้า / สต็อก</h1>
         <Link href="/admin/menu" className="text-sm text-(--text-muted) hover:underline">
           จัดการเมนู →
         </Link>

@@ -24,7 +24,7 @@ export default async function MenuAdminPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold">จัดการเมนู</h1>
+      <h1 className="page-title text-2xl font-bold">จัดการเมนู</h1>
 
       <section className="card p-4 space-y-3">
         <h2 className="font-semibold">เพิ่มหมวดหมู่</h2>

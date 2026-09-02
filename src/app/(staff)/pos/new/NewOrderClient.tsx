@@ -63,7 +63,7 @@ export function NewOrderClient({
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 pb-28">
-      <h1 className="text-2xl font-bold">ออเดอร์ใหม่</h1>
+      <h1 className="page-title text-2xl font-bold">ออเดอร์ใหม่</h1>
 
       {error && (
         <div className="p-3 bg-red-100 text-red-700 text-center text-sm rounded-lg">
