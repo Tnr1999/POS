@@ -67,6 +67,12 @@ export default async function MenuAdminPage() {
               </option>
             ))}
           </select>
+          <input
+            name="imageUrl"
+            type="url"
+            placeholder="ลิงก์รูปภาพ (ไม่บังคับ)"
+            className="border rounded-lg px-3 py-2 sm:col-span-3"
+          />
           <button className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2 font-medium sm:col-span-4">
             เพิ่มเมนู
           </button>
@@ -108,48 +114,71 @@ function MenuItemList({
   items,
   categories,
 }: {
-  items: { id: string; name: string; price: number; active: boolean; categoryId: string | null }[];
+  items: {
+    id: string;
+    name: string;
+    price: number;
+    active: boolean;
+    categoryId: string | null;
+    imageUrl: string | null;
+  }[];
   categories: { id: string; name: string }[];
 }) {
   return (
     <ul className="divide-y">
       {items.map((item) => (
-        <li key={item.id} className={`py-3 ${item.active ? "" : "opacity-60"}`}>
-          <form action={updateMenuItem} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
-            <input type="hidden" name="id" value={item.id} />
-            <input
-              name="name"
-              defaultValue={item.name}
-              className="border rounded-lg px-3 py-2 sm:col-span-2"
-            />
-            <input
-              name="price"
-              type="number"
-              step="0.01"
-              min="0"
-              defaultValue={toBaht(item.price)}
-              className="border rounded-lg px-3 py-2"
-            />
-            <select
-              name="categoryId"
-              defaultValue={item.categoryId ?? ""}
-              className="border rounded-lg px-3 py-2"
-            >
-              <option value="">ไม่มีหมวดหมู่</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <div className="flex gap-2">
-              <button className="bg-(--accent) text-white rounded-lg px-3 py-2 text-sm">
-                บันทึก
-              </button>
-            </div>
-          </form>
-          <div className="flex items-center gap-3 mt-2 text-sm">
-            <span className="text-(--text-muted)">{formatBaht(item.price)} บาท</span>
+        <li key={item.id} className={`py-3 flex gap-3 ${item.active ? "" : "opacity-60"}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.imageUrl || undefined}
+            alt=""
+            className={`w-14 h-14 rounded-lg object-cover shrink-0 bg-(--surface-muted) ${
+              item.imageUrl ? "" : "invisible"
+            }`}
+          />
+          <div className="flex-1 min-w-0">
+            <form action={updateMenuItem} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
+              <input type="hidden" name="id" value={item.id} />
+              <input
+                name="name"
+                defaultValue={item.name}
+                className="border rounded-lg px-3 py-2 sm:col-span-2"
+              />
+              <input
+                name="price"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={toBaht(item.price)}
+                className="border rounded-lg px-3 py-2"
+              />
+              <select
+                name="categoryId"
+                defaultValue={item.categoryId ?? ""}
+                className="border rounded-lg px-3 py-2"
+              >
+                <option value="">ไม่มีหมวดหมู่</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <div className="flex gap-2">
+                <button className="bg-(--accent) text-white rounded-lg px-3 py-2 text-sm">
+                  บันทึก
+                </button>
+              </div>
+              <input
+                name="imageUrl"
+                type="url"
+                defaultValue={item.imageUrl ?? ""}
+                placeholder="ลิงก์รูปภาพ (ไม่บังคับ)"
+                className="border rounded-lg px-3 py-2 sm:col-span-4"
+              />
+            </form>
+            <div className="flex items-center gap-3 mt-2 text-sm">
+              <span className="text-(--text-muted)">{formatBaht(item.price)} บาท</span>
             <form
               action={async () => {
                 "use server";
@@ -181,6 +210,7 @@ function MenuItemList({
             {!item.active && (
               <span className="text-(--text-muted-2)">(ปิดขายอยู่ ลูกค้าจะไม่เห็นเมนูนี้)</span>
             )}
+            </div>
           </div>
         </li>
       ))}

@@ -63,7 +63,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-chonburi);
+  --font-display: var(--font-kanit);
 }
 
 body {
@@ -128,6 +128,13 @@ button {
 .chip-neutral {
   background: var(--surface-muted);
   color: var(--text-subtle);
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 .no-print {
