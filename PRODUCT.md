@@ -34,4 +34,4 @@ Warm, restaurant-native, unmistakably food — not a generic SaaS admin panel. A
 
 ## Accessibility & Inclusion
 
-Standard WCAG AA: ≥4.5:1 body text contrast, ≥44px touch targets on mobile (already enforced via global `button { min-height: 2.5rem }`), `prefers-reduced-motion` respected for any new animation, `prefers-color-scheme` dark mode already supported.
+Standard WCAG AA: ≥4.5:1 body text contrast, ≥44px touch targets on mobile (already enforced via global `button { min-height: 2.5rem }`), `prefers-reduced-motion` respected for any new animation. No dark mode — tried it, dropped per feedback ("don't like the black background at all"); the app always renders light/cream regardless of the OS theme.
