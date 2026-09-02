@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Chonburi } from "next/font/google";
+import { Geist, Geist_Mono, Kanit } from "next/font/google";
 import { Toaster } from "@/components/Toast";
 import "./globals.css";
 
@@ -15,9 +15,11 @@ const geistMono = Geist_Mono({
 
 // Display face for the customer-facing order page only (shop name, menu
 // section headers) — see DESIGN.md "The Two-Places Rule". Thai + Latin.
-const chonburi = Chonburi({
-  variable: "--font-chonburi",
-  weight: "400",
+// Kanit — clean geometric sans, simple/modern rather than a decorative
+// display face (swapped from Chonburi per feedback: "เรียบง่าย").
+const kanit = Kanit({
+  variable: "--font-kanit",
+  weight: ["500", "600"],
   subsets: ["latin", "thai"],
 });
 
@@ -36,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="th"
-      className={`${geistSans.variable} ${geistMono.variable} ${chonburi.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${kanit.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

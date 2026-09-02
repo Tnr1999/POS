@@ -140,7 +140,7 @@ export function OrderClient({
   return (
     <div className="max-w-2xl mx-auto pb-32">
       <header className="card rounded-none px-4 py-3.5 sticky top-0 z-10 flex items-baseline gap-2.5">
-        <h1 className="font-display text-2xl text-(--brand) leading-none">{tableName}</h1>
+        <h1 className="font-display font-medium text-2xl text-(--brand) leading-none">{tableName}</h1>
         <p className="text-sm text-(--text-muted)">สแกนเพื่อสั่งอาหาร</p>
       </header>
 
@@ -207,7 +207,7 @@ export function OrderClient({
             data-group-id={group.id}
             className="scroll-mt-28"
           >
-            <h2 className="font-display text-xl text-(--brand) mb-3">{group.name}</h2>
+            <h2 className="font-display font-medium text-xl text-(--brand) mb-3">{group.name}</h2>
             <ul className="space-y-3">
               {group.items.map((item) => {
                 const qty = cart[item.id] ?? 0;

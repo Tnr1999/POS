@@ -23,9 +23,9 @@ colors:
   warning: "#d97706"
 typography:
   display:
-    fontFamily: "Chonburi, 'Kanit', serif"
+    fontFamily: "Kanit, sans-serif"
     fontSize: "clamp(1.5rem, 4vw, 2.25rem)"
-    fontWeight: 400
+    fontWeight: 500
     lineHeight: 1.15
     letterSpacing: "normal"
   title:
@@ -128,21 +128,21 @@ Warm and restrained: a single terracotta accent against quiet neutral grays, wit
 
 ## 3. Typography
 
-**Display Font:** Chonburi (Thai + Latin, Google Fonts), falling back to Kanit, then serif
+**Display Font:** Kanit (Thai + Latin, Google Fonts), weights 500/600
 **Body/UI Font:** Geist Sans (already wired via `next/font`), falling back to Arial
 **Mono Font:** Geist Mono — the printed receipt only
 
-**Character:** Chonburi is a bold, slightly rounded Thai display face with real warmth — it reads as "restaurant signage," not "corporate app," and carries Thai glyphs natively (this app's copy is Thai-first). It appears in exactly two places: the customer order page's shop-name header and section titles. Everything else — every staff screen, every button, every form label — stays in Geist Sans, because staff are scanning a busy screen fast and a display face there would slow that down.
+**Character:** Kanit is a clean geometric Thai sans — simple and modern rather than a decorative display face (swapped from the earlier Chonburi pick per feedback: "เรียบง่าย", keep it simple). It carries Thai glyphs natively (this app's copy is Thai-first). It appears in exactly two places: the customer order page's shop-name header and section titles, at medium weight (500) for a quiet, uncluttered look. Everything else — every staff screen, every button, every form label — stays in Geist Sans, because staff are scanning a busy screen fast and a display face there would slow that down.
 
 ### Hierarchy
-- **Display** (400, `clamp(1.5rem, 4vw, 2.25rem)`, 1.15): shop name on `/order/[token]`, menu category headers. Nowhere on a staff screen.
+- **Display** (500, `clamp(1.5rem, 4vw, 2.25rem)`, 1.15): shop name on `/order/[token]`, menu category headers. Nowhere on a staff screen.
 - **Title** (700, 1.25rem, 1.3): page titles ("จัดการเมนู", "ออเดอร์ที่เปิดอยู่"), card headings.
 - **Body** (400, 0.9375rem, 1.5): everything else — menu item names, form labels, table cells.
 - **Label** (500, 0.8125rem, 1.3): timestamps, helper text, status pills.
 - **Mono** (400, 0.875rem): the printed receipt body only — it's meant to look like it came out of a receipt printer.
 
 ### Named Rules
-**The Two-Places Rule.** The display face (Chonburi) is permitted in exactly two contexts: the customer-facing shop name and menu section headers. Anywhere else — even a big number on a report — stays in Geist Sans at a larger size/weight instead of switching fonts.
+**The Two-Places Rule.** The display face (Kanit) is permitted in exactly two contexts: the customer-facing shop name and menu section headers. Anywhere else — even a big number on a report — stays in Geist Sans at a larger size/weight instead of switching fonts.
 
 ## 4. Elevation
 
@@ -182,7 +182,7 @@ Flat by default, with one soft ambient shadow reserved for surfaces that sit "ab
 
 ### Navigation
 - **Staff header:** `--surface` background, bottom hairline border, nav links as text (no icons) with `hover:bg(--surface-muted)`; active page is implied by URL, not a persistent highlight — kept deliberately quiet per the "staff surfaces are quiet" principle.
-- **Customer order page:** no nav — a single sticky header (shop name in Chonburi + "สแกนเพื่อสั่งอาหาร" subtitle) and a fixed bottom cart bar are the entire chrome.
+- **Customer order page:** no nav — a single sticky header (shop name in Kanit + "สแกนเพื่อสั่งอาหาร" subtitle) and a fixed bottom cart bar are the entire chrome.
 
 ### Toast / Confirm Dialog (signature components)
 - **Toast:** dark `--accent` chip (or `--danger` for errors), white text, bottom-center, auto-dismiss — deliberately neutral-toned rather than terracotta, so a toast never gets mistaken for a call-to-action.
@@ -192,7 +192,7 @@ Flat by default, with one soft ambient shadow reserved for surfaces that sit "ab
 
 ### Do:
 - **Do** use Terracotta Ember (`#c1440e`) for exactly one primary action per screen, plus the customer-facing brand mark.
-- **Do** use Chonburi only for the customer order page's shop name and menu section headers — Geist Sans everywhere else, including every staff screen.
+- **Do** use Kanit only for the customer order page's shop name and menu section headers — Geist Sans everywhere else, including every staff screen.
 - **Do** keep the receipt and QR print sheet literal `bg-white`/`text-black`, independent of the viewer's OS theme.
 - **Do** give every destructive action (`ConfirmButton`) a named confirm label ("ลบเมนู"), never a bare "ยืนยัน."
 - **Do** keep every token defined for both light and dark (`prefers-color-scheme`) — no new hardcoded `bg-white`/`bg-gray-*`/`text-gray-*` utility.
