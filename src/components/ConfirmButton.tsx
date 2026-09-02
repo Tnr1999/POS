@@ -67,7 +67,7 @@ export function ConfirmButton({
           <div
             role="alertdialog"
             aria-modal="true"
-            className="w-full max-w-sm space-y-4 rounded-xl bg-(--surface) p-5 shadow-xl"
+            className="card w-full max-w-sm space-y-4 p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="space-y-1">

@@ -8,7 +8,7 @@ export default function StaffError({
   reset: () => void;
 }) {
   return (
-    <div className="max-w-md mx-auto mt-16 bg-(--surface) rounded-xl shadow p-6 text-center space-y-4">
+    <div className="max-w-md mx-auto mt-16 card p-6 text-center space-y-4">
       <p className="text-red-600 font-medium">{error.message || "เกิดข้อผิดพลาด"}</p>
       <button
         onClick={reset}

@@ -26,7 +26,7 @@ export default async function MenuAdminPage() {
     <div className="max-w-4xl mx-auto space-y-8">
       <h1 className="text-2xl font-bold">จัดการเมนู</h1>
 
-      <section className="bg-(--surface) rounded-xl shadow p-4 space-y-3">
+      <section className="card p-4 space-y-3">
         <h2 className="font-semibold">เพิ่มหมวดหมู่</h2>
         <form action={createCategory} className="flex gap-2">
           <input
@@ -41,7 +41,7 @@ export default async function MenuAdminPage() {
         </form>
       </section>
 
-      <section className="bg-(--surface) rounded-xl shadow p-4 space-y-3">
+      <section className="card p-4 space-y-3">
         <h2 className="font-semibold">เพิ่มเมนู</h2>
         <form action={createMenuItem} className="grid grid-cols-1 sm:grid-cols-4 gap-2">
           <input
@@ -74,7 +74,7 @@ export default async function MenuAdminPage() {
       </section>
 
       {categories.map((category) => (
-        <section key={category.id} className="bg-(--surface) rounded-xl shadow p-4 space-y-3">
+        <section key={category.id} className="card p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">{category.name}</h2>
             <ConfirmButton
@@ -95,7 +95,7 @@ export default async function MenuAdminPage() {
       ))}
 
       {uncategorized.length > 0 && (
-        <section className="bg-(--surface) rounded-xl shadow p-4 space-y-3">
+        <section className="card p-4 space-y-3">
           <h2 className="font-semibold">ไม่มีหมวดหมู่</h2>
           <MenuItemList items={uncategorized} categories={categories} />
         </section>
@@ -114,7 +114,7 @@ function MenuItemList({
   return (
     <ul className="divide-y">
       {items.map((item) => (
-        <li key={item.id} className="py-3">
+        <li key={item.id} className={`py-3 ${item.active ? "" : "opacity-60"}`}>
           <form action={updateMenuItem} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
             <input type="hidden" name="id" value={item.id} />
             <input
