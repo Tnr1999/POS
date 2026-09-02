@@ -178,7 +178,7 @@ export function PosBoard({
                 <h2 className="font-semibold flex items-center gap-2">
                   {order.tableName ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}
                   {isNew && (
-                    <span className="text-xs font-medium text-amber-600 bg-amber-50 rounded-full px-2 py-0.5">
+                    <span className="chip chip-warning">
                       ใหม่
                     </span>
                   )}
@@ -198,7 +198,7 @@ export function PosBoard({
                       {item.name} x{item.qty}
                     </span>
                     {item.status === "SERVED" ? (
-                      <span className="text-green-600 text-xs shrink-0">เสิร์ฟแล้ว</span>
+                      <span className="text-(--text-success) text-xs shrink-0">เสิร์ฟแล้ว</span>
                     ) : (
                       <button
                         disabled={isPending}
@@ -230,7 +230,7 @@ export function PosBoard({
                     confirmTitle="ยกเลิกออเดอร์"
                     confirmMessage={`ยกเลิกออเดอร์ของ${order.tableName ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}? ลบแล้วกู้คืนไม่ได้`}
                     confirmLabel="ยกเลิกออเดอร์"
-                    className="text-sm text-red-600 disabled:opacity-50 px-2"
+                    className="text-sm text-(--text-danger) disabled:opacity-50 px-2"
                     onSuccess={() => router.refresh()}
                   >
                     ยกเลิก

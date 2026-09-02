@@ -65,7 +65,7 @@ export default async function TablesAdminPage() {
                 confirmTitle="สร้าง QR ใหม่"
                 confirmMessage={`QR เดิมของ "${table.name}" ที่พิมพ์ไว้จะใช้ไม่ได้ทันที ต้องพิมพ์แผ่นใหม่ไปแปะแทน — ยืนยัน?`}
                 confirmLabel="สร้าง QR ใหม่"
-                className="text-amber-600 hover:underline"
+                className="text-(--text-warning) hover:underline"
               >
                 สร้าง QR ใหม่
               </ConfirmButton>
@@ -77,7 +77,7 @@ export default async function TablesAdminPage() {
                 confirmTitle="ลบโต๊ะ"
                 confirmMessage={`ลบ "${table.name}"? ลบแล้วกู้คืนไม่ได้ (ลบไม่ได้ถ้ายังมีออเดอร์ค้างอยู่)`}
                 confirmLabel="ลบโต๊ะ"
-                className="text-red-600 hover:underline"
+                className="text-(--text-danger) hover:underline"
               >
                 ลบโต๊ะ
               </ConfirmButton>

@@ -5,13 +5,13 @@ colors:
   terracotta: "#c1440e"
   terracotta-deep: "#8f3009"
   terracotta-tint: "#fdece3"
-  neutral-bg: "#f9fafb"
+  neutral-bg: "#faf3e6"
   neutral-bg-dark: "#0a0a0a"
   neutral-surface: "#ffffff"
   neutral-surface-dark: "#18181b"
-  neutral-surface-muted: "#f3f4f6"
+  neutral-surface-muted: "#f5ecdc"
   neutral-surface-muted-dark: "#27272a"
-  neutral-border: "#e5e7eb"
+  neutral-border: "#ece0cc"
   neutral-border-dark: "#3f3f46"
   ink: "#111827"
   ink-dark: "#e5e7eb"
@@ -108,18 +108,19 @@ Warm and restrained: a single terracotta accent against quiet neutral grays, wit
 
 ### Neutral
 - **Kitchen White** (`#ffffff` / dark: `#18181b`): card, header, and modal surfaces (`--surface`).
-- **Counter Gray** (`#f9fafb` / dark: `#0a0a0a`): page background (`--background`).
-- **Soft Gray** (`#f3f4f6` / dark: `#27272a`): qty steppers, hover states, soft accents (`--surface-muted`).
-- **Hairline** (`#e5e7eb` / dark: `#3f3f46`): borders on top of a surface (`--surface-border`).
+- **Counter Cream** (`#faf3e6` / dark: `#0a0a0a`): page background (`--background`) — warm cream, not cool gray, so the page reads "cozy corner shop" rather than "SaaS dashboard" (per feedback: keep it playful/friendly).
+- **Soft Cream** (`#f5ecdc` / dark: `#27272a`): qty steppers, hover states, soft accents (`--surface-muted`).
+- **Hairline** (`#ece0cc` / dark: `#3f3f46`): borders on top of a surface (`--surface-border`).
 - **Ink** (`#111827` / dark: `#e5e7eb`): primary text (`--foreground`).
 - **Ink Muted** (`#6b7280` / dark: `#a1a1aa`): secondary text — prices, timestamps, helper copy (`--text-muted`).
 - **Ink Subtle** (`#374151` / dark: `#d4d4d8`): dimmed body text, e.g. secondary link (`--text-subtle`).
 - **Charcoal** (`#1f2937` / dark: `#3f3f46`): secondary dark button/pill — "print," "add," "save" actions that aren't the primary action (`--accent`).
 
 ### Semantic
-- **Success** (`#16a34a`): served, paid, menu item turned back on.
-- **Danger** (`#dc2626`): delete/cancel text and confirm-dialog "danger" tone.
-- **Warning** (`#d97706`): "ปิดขายชั่วคราว," QR-regenerate warning tone. Kept a clear hue-step away from terracotta (amber/gold vs. rust-orange) so it never gets mistaken for the brand accent.
+Text uses `--text-success` / `--text-warning` / `--text-danger` (not plain Tailwind `green-600`/`amber-600`/`red-600` — those fail 4.5:1 in one theme or the other; found and fixed during the accessibility QA pass). Solid button/badge backgrounds still use plain Tailwind stops since white text on them is checked separately.
+- **Success** (light `#15803d` / dark `#4ade80`): served, paid, menu item turned back on.
+- **Danger** (light `#b91c1c` / dark `#f87171`): delete/cancel text and confirm-dialog "danger" tone. The danger *button* background stays `red-600`/`red-700` (white text on it already clears 4.5:1).
+- **Warning** (light `#b45309` / dark `#fbbf24`): "ปิดขายชั่วคราว," QR-regenerate warning tone. Kept a clear hue-step away from terracotta (amber/gold vs. rust-orange) so it never gets mistaken for the brand accent. The warning *button* background is `amber-700`/`amber-800`, not `amber-600` — white text on amber-600 was only 3.2:1.
 
 ### Named Rules
 **The One Ember Rule.** Terracotta appears on exactly one primary action per screen and the customer brand mark. If a screen has two terracotta buttons competing for attention, one of them is wrong — demote it to `button-ghost` or `--accent`.

@@ -104,7 +104,7 @@ export default async function MenuAdminPage() {
               confirmTitle="ลบหมวดหมู่"
               confirmMessage={`ลบหมวดหมู่ "${category.name}"? เมนู ${category.menuItems.length} รายการในหมวดนี้จะกลายเป็น "ไม่มีหมวดหมู่" (ไม่ถูกลบ)`}
               confirmLabel="ลบหมวดหมู่"
-              className="text-sm text-red-600 hover:underline"
+              className="text-sm text-(--text-danger) hover:underline"
             >
               ลบหมวดหมู่
             </ConfirmButton>
@@ -147,6 +147,10 @@ function MenuItemList({
           <img
             src={item.imageUrl || undefined}
             alt=""
+            loading="lazy"
+            decoding="async"
+            width={56}
+            height={56}
             className={`w-14 h-14 rounded-lg object-cover shrink-0 bg-(--surface-muted) ${
               item.imageUrl ? "" : "invisible"
             }`}
@@ -214,7 +218,7 @@ function MenuItemList({
               <span className="text-(--text-muted)">{formatBaht(item.price)} บาท</span>
               {item.trackStock && (
                 <span
-                  className={item.stock <= 5 ? "text-red-600 font-medium" : "text-(--text-muted)"}
+                  className={item.stock <= 5 ? "text-(--text-danger) font-medium" : "text-(--text-muted)"}
                 >
                   สต็อก: {item.stock}
                 </span>
@@ -228,8 +232,8 @@ function MenuItemList({
                 <button
                   className={
                     item.active
-                      ? "text-amber-600 hover:underline"
-                      : "text-green-600 hover:underline"
+                      ? "text-(--text-warning) hover:underline"
+                      : "text-(--text-success) hover:underline"
                   }
                 >
                   {item.active ? "ปิดขายชั่วคราว" : "เปิดขาย"}
@@ -243,7 +247,7 @@ function MenuItemList({
                 confirmTitle="ลบเมนู"
                 confirmMessage={`ลบเมนู "${item.name}"? ลบแล้วกู้คืนไม่ได้`}
                 confirmLabel="ลบเมนู"
-                className="text-red-600 hover:underline"
+                className="text-(--text-danger) hover:underline"
               >
                 ลบ
               </ConfirmButton>
