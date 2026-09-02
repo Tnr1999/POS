@@ -96,24 +96,26 @@ export default async function ReportsPage({
 
       <section className="bg-white rounded-xl shadow p-4">
         <h2 className="font-semibold mb-3">เมนูขายดี</h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-gray-500">
-              <th className="py-1">เมนู</th>
-              <th className="py-1 text-right">จำนวน</th>
-              <th className="py-1 text-right">ยอดขาย</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topItems.map(([name, data]) => (
-              <tr key={name} className="border-t">
-                <td className="py-1">{name}</td>
-                <td className="py-1 text-right">{data.qty}</td>
-                <td className="py-1 text-right">{formatBaht(data.revenue)}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500">
+                <th className="py-1">เมนู</th>
+                <th className="py-1 text-right">จำนวน</th>
+                <th className="py-1 text-right">ยอดขาย</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {topItems.map(([name, data]) => (
+                <tr key={name} className="border-t">
+                  <td className="py-1">{name}</td>
+                  <td className="py-1 text-right">{data.qty}</td>
+                  <td className="py-1 text-right">{formatBaht(data.revenue)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {topItems.length === 0 && (
           <p className="text-sm text-gray-400">ไม่มีข้อมูลในช่วงเวลานี้</p>
         )}

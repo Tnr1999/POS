@@ -2,10 +2,78 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { formatBaht } from "@/lib/money";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { toast } from "@/components/Toast";
+
+const NEW_ORDER_HIGHLIGHT_MS = 15000;
+
+/** Two short beeps via Web Audio — no external asset needed. Browsers block
+ *  audio until a user gesture, so the context is created lazily on the
+ *  first click/tap anywhere on the page (see useNewOrderAlert below). */
+function playNewOrderBeep(ctx: AudioContext) {
+  const now = ctx.currentTime;
+  [0, 0.22].forEach((offset) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.0001, now + offset);
+    gain.gain.exponentialRampToValueAtTime(0.2, now + offset + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.18);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now + offset);
+    osc.stop(now + offset + 0.2);
+  });
+}
+
+/** Tracks which order ids are "new since last poll" so the board can ring +
+ *  highlight them, without needing a real push/websocket channel. */
+function useNewOrderAlert(orders: Order[]) {
+  const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const knownIds = useRef<Set<string> | null>(null);
+  const audioCtx = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    function unlockAudio() {
+      audioCtx.current ??= new AudioContext();
+    }
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", unlockAudio);
+  }, []);
+
+  useEffect(() => {
+    const currentIds = new Set(orders.map((o) => o.id));
+    if (knownIds.current === null) {
+      // first render — nothing "new" yet, just record the baseline
+      knownIds.current = currentIds;
+      return;
+    }
+    const arrived = orders.filter((o) => !knownIds.current!.has(o.id));
+    knownIds.current = currentIds;
+    if (arrived.length === 0) return;
+
+    if (audioCtx.current) playNewOrderBeep(audioCtx.current);
+    toast(
+      arrived.length === 1
+        ? `ออเดอร์ใหม่: ${arrived[0].tableName ?? (arrived[0].type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}`
+        : `มีออเดอร์ใหม่ ${arrived.length} ออเดอร์`
+    );
+    setNewIds((prev) => new Set([...prev, ...arrived.map((o) => o.id)]));
+    arrived.forEach((o) => {
+      setTimeout(() => {
+        setNewIds((prev) => {
+          const next = new Set(prev);
+          next.delete(o.id);
+          return next;
+        });
+      }, NEW_ORDER_HIGHLIGHT_MS);
+    });
+  }, [orders]);
+
+  return newIds;
+}
 
 type OrderItem = { id: string; name: string; price: number; qty: number; status: string };
 type Order = {
@@ -45,6 +113,7 @@ export function PosBoard({
   const [orders, setOrders] = useState(initialOrders);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const newOrderIds = useNewOrderAlert(orders);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -97,11 +166,22 @@ export function PosBoard({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {orders.map((order) => {
           const total = order.items.reduce((sum, i) => sum + i.price * i.qty, 0);
+          const isNew = newOrderIds.has(order.id);
           return (
-            <div key={order.id} className="bg-white rounded-xl shadow p-4 space-y-3">
+            <div
+              key={order.id}
+              className={`bg-white rounded-xl shadow p-4 space-y-3 transition-shadow ${
+                isNew ? "ring-2 ring-amber-500 animate-pulse" : ""
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold">
+                <h2 className="font-semibold flex items-center gap-2">
                   {order.tableName ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}
+                  {isNew && (
+                    <span className="text-xs font-medium text-amber-600 bg-amber-50 rounded-full px-2 py-0.5">
+                      ใหม่
+                    </span>
+                  )}
                 </h2>
                 <span className="text-xs text-gray-400">
                   {new Date(order.createdAt).toLocaleTimeString("th-TH", {
