@@ -5,13 +5,13 @@ colors:
   terracotta: "#c1440e"
   terracotta-deep: "#8f3009"
   terracotta-tint: "#fdece3"
-  neutral-bg: "#f9fafb"
+  neutral-bg: "#faf3e6"
   neutral-bg-dark: "#0a0a0a"
   neutral-surface: "#ffffff"
   neutral-surface-dark: "#18181b"
-  neutral-surface-muted: "#f3f4f6"
+  neutral-surface-muted: "#f5ecdc"
   neutral-surface-muted-dark: "#27272a"
-  neutral-border: "#e5e7eb"
+  neutral-border: "#ece0cc"
   neutral-border-dark: "#3f3f46"
   ink: "#111827"
   ink-dark: "#e5e7eb"
@@ -108,9 +108,9 @@ Warm and restrained: a single terracotta accent against quiet neutral grays, wit
 
 ### Neutral
 - **Kitchen White** (`#ffffff` / dark: `#18181b`): card, header, and modal surfaces (`--surface`).
-- **Counter Gray** (`#f9fafb` / dark: `#0a0a0a`): page background (`--background`).
-- **Soft Gray** (`#f3f4f6` / dark: `#27272a`): qty steppers, hover states, soft accents (`--surface-muted`).
-- **Hairline** (`#e5e7eb` / dark: `#3f3f46`): borders on top of a surface (`--surface-border`).
+- **Counter Cream** (`#faf3e6` / dark: `#0a0a0a`): page background (`--background`) — warm cream, not cool gray, so the page reads "cozy corner shop" rather than "SaaS dashboard" (per feedback: keep it playful/friendly).
+- **Soft Cream** (`#f5ecdc` / dark: `#27272a`): qty steppers, hover states, soft accents (`--surface-muted`).
+- **Hairline** (`#ece0cc` / dark: `#3f3f46`): borders on top of a surface (`--surface-border`).
 - **Ink** (`#111827` / dark: `#e5e7eb`): primary text (`--foreground`).
 - **Ink Muted** (`#6b7280` / dark: `#a1a1aa`): secondary text — prices, timestamps, helper copy (`--text-muted`).
 - **Ink Subtle** (`#374151` / dark: `#d4d4d8`): dimmed body text, e.g. secondary link (`--text-subtle`).

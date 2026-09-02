@@ -141,7 +141,7 @@ export function OrderClient({
     <div className="max-w-2xl mx-auto pb-32">
       <header className="card rounded-none px-4 py-3.5 sticky top-0 z-10 flex items-baseline gap-2.5">
         <h1 className="font-display font-medium text-2xl text-(--brand) leading-none">{tableName}</h1>
-        <p className="text-sm text-(--text-muted)">สแกนเพื่อสั่งอาหาร</p>
+        <p className="text-sm text-(--text-muted)">🍽️ สแกนเพื่อสั่งอาหาร</p>
       </header>
 
       {/* Sticky category tabs — jump to a section, active tab tracks scroll
@@ -193,7 +193,7 @@ export function OrderClient({
 
       {justSubmitted && (
         <div className="mx-4 mt-4 p-3 rounded-lg bg-green-100 text-green-700 text-center text-sm font-medium">
-          ส่งออเดอร์แล้ว! ครัวกำลังเตรียมอาหารของคุณ
+          🎉 ส่งออเดอร์แล้ว! ครัวกำลังเตรียมอาหารของคุณ
         </div>
       )}
 

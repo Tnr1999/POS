@@ -14,11 +14,13 @@
  * which must stay white in both themes, not "the current surface color".
  */
 :root {
-  --background: #f9fafb; /* page background */
+  /* warm cream, not cool gray — a little more "cozy corner shop", a little
+     less "SaaS dashboard" (per feedback: keep it playful/friendly) */
+  --background: #faf3e6; /* page background */
   --foreground: #111827; /* page text */
   --surface: #ffffff; /* card / header / modal background */
-  --surface-muted: #f3f4f6; /* soft accents: qty steppers, hover states */
-  --surface-border: #e5e7eb; /* borders on top of --surface */
+  --surface-muted: #f5ecdc; /* soft accents: qty steppers, hover states */
+  --surface-border: #ece0cc; /* borders on top of --surface */
   --text-muted: #6b7280; /* secondary text (was text-gray-500) */
   --text-muted-2: #9ca3af; /* tertiary/placeholder text (was text-gray-400) */
   --text-subtle: #374151; /* slightly dimmed body text (was text-gray-600/700) */
@@ -91,7 +93,7 @@ button {
    padding stays a per-instance Tailwind utility since it varies. */
 .card {
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow:
     0 1px 2px rgb(0 0 0 / 0.05),
     0 1px 3px rgb(0 0 0 / 0.1);
