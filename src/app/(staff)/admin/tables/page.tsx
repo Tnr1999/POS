@@ -1,6 +1,7 @@
 import QRCode from "qrcode";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import { createTable, deleteTable, regenerateTableToken } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -55,24 +56,31 @@ export default async function TablesAdminPage() {
             <img src={table.qrDataUrl} alt={`QR code ${table.name}`} className="mx-auto" />
             <p className="text-xs text-gray-400 break-all">{table.orderUrl}</p>
             <div className="flex justify-center gap-3 text-sm pt-1">
-              <form
+              <ConfirmButton
                 action={async () => {
                   "use server";
                   await regenerateTableToken(table.id);
                 }}
+                tone="warning"
+                confirmTitle="สร้าง QR ใหม่"
+                confirmMessage={`QR เดิมของ "${table.name}" ที่พิมพ์ไว้จะใช้ไม่ได้ทันที ต้องพิมพ์แผ่นใหม่ไปแปะแทน — ยืนยัน?`}
+                confirmLabel="สร้าง QR ใหม่"
+                className="text-amber-600 hover:underline"
               >
-                <button className="text-amber-600 hover:underline">
-                  สร้าง QR ใหม่
-                </button>
-              </form>
-              <form
+                สร้าง QR ใหม่
+              </ConfirmButton>
+              <ConfirmButton
                 action={async () => {
                   "use server";
                   await deleteTable(table.id);
                 }}
+                confirmTitle="ลบโต๊ะ"
+                confirmMessage={`ลบ "${table.name}"? ลบแล้วกู้คืนไม่ได้ (ลบไม่ได้ถ้ายังมีออเดอร์ค้างอยู่)`}
+                confirmLabel="ลบโต๊ะ"
+                className="text-red-600 hover:underline"
               >
-                <button className="text-red-600 hover:underline">ลบโต๊ะ</button>
-              </form>
+                ลบโต๊ะ
+              </ConfirmButton>
             </div>
           </div>
         ))}

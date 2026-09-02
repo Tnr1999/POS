@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { formatBaht } from "@/lib/money";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import {
   createCategory,
   createMenuItem,
@@ -76,16 +77,18 @@ export default async function MenuAdminPage() {
         <section key={category.id} className="bg-white rounded-xl shadow p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">{category.name}</h2>
-            <form
+            <ConfirmButton
               action={async () => {
                 "use server";
                 await deleteCategory(category.id);
               }}
+              confirmTitle="ลบหมวดหมู่"
+              confirmMessage={`ลบหมวดหมู่ "${category.name}"? เมนู ${category.menuItems.length} รายการในหมวดนี้จะกลายเป็น "ไม่มีหมวดหมู่" (ไม่ถูกลบ)`}
+              confirmLabel="ลบหมวดหมู่"
+              className="text-sm text-red-600 hover:underline"
             >
-              <button className="text-sm text-red-600 hover:underline">
-                ลบหมวดหมู่
-              </button>
-            </form>
+              ลบหมวดหมู่
+            </ConfirmButton>
           </div>
           <MenuItemList items={category.menuItems} categories={categories} />
         </section>
@@ -163,14 +166,18 @@ function MenuItemList({
                 {item.active ? "ปิดขายชั่วคราว" : "เปิดขาย"}
               </button>
             </form>
-            <form
+            <ConfirmButton
               action={async () => {
                 "use server";
                 await deleteMenuItem(item.id);
               }}
+              confirmTitle="ลบเมนู"
+              confirmMessage={`ลบเมนู "${item.name}"? ลบแล้วกู้คืนไม่ได้`}
+              confirmLabel="ลบเมนู"
+              className="text-red-600 hover:underline"
             >
-              <button className="text-red-600 hover:underline">ลบ</button>
-            </form>
+              ลบ
+            </ConfirmButton>
             {!item.active && (
               <span className="text-gray-400">(ปิดขายอยู่ ลูกค้าจะไม่เห็นเมนูนี้)</span>
             )}

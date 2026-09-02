@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { formatBaht } from "@/lib/money";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { toast } from "@/components/Toast";
 
 type OrderItem = { id: string; name: string; price: number; qty: number; status: string };
 type Order = {
@@ -60,23 +62,23 @@ export function PosBoard({
 
   function handleAdvance(orderItemId: string) {
     startTransition(async () => {
-      await advanceOrderItemStatus(orderItemId);
-      router.refresh();
+      try {
+        await advanceOrderItemStatus(orderItemId);
+        router.refresh();
+      } catch (err) {
+        toast(err instanceof Error ? err.message : "อัปเดตสถานะไม่สำเร็จ", "error");
+      }
     });
   }
 
   function handlePay(orderId: string) {
     startTransition(async () => {
-      await payOrder(orderId);
-      router.push(`/receipt/${orderId}`);
-    });
-  }
-
-  function handleCancel(orderId: string) {
-    if (!confirm("ยกเลิกออเดอร์นี้?")) return;
-    startTransition(async () => {
-      await cancelOrder(orderId);
-      router.refresh();
+      try {
+        await payOrder(orderId);
+        router.push(`/receipt/${orderId}`);
+      } catch (err) {
+        toast(err instanceof Error ? err.message : "ชำระเงินไม่สำเร็จ", "error");
+      }
     });
   }
 
@@ -143,13 +145,16 @@ export function PosBoard({
               <div className="flex flex-col gap-2 pt-2 border-t">
                 <span className="font-semibold">รวม {formatBaht(total)} บาท</span>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => handleCancel(order.id)}
-                    disabled={isPending}
+                  <ConfirmButton
+                    action={() => cancelOrder(order.id)}
+                    confirmTitle="ยกเลิกออเดอร์"
+                    confirmMessage={`ยกเลิกออเดอร์ของ${order.tableName ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}? ลบแล้วกู้คืนไม่ได้`}
+                    confirmLabel="ยกเลิกออเดอร์"
                     className="text-sm text-red-600 disabled:opacity-50 px-2"
+                    onSuccess={() => router.refresh()}
                   >
                     ยกเลิก
-                  </button>
+                  </ConfirmButton>
                   <button
                     onClick={() => handlePay(order.id)}
                     disabled={isPending || order.items.length === 0}
@@ -213,9 +218,13 @@ function AddItemPicker({
         disabled={isPending || !menuItemId}
         onClick={() =>
           startTransition(async () => {
-            await addItemToOrder(orderId, menuItemId, qty);
-            setQty(1);
-            onAdded();
+            try {
+              await addItemToOrder(orderId, menuItemId, qty);
+              setQty(1);
+              onAdded();
+            } catch (err) {
+              toast(err instanceof Error ? err.message : "เพิ่มรายการไม่สำเร็จ", "error");
+            }
           })
         }
         className="bg-gray-800 text-white rounded-lg px-4 py-2 disabled:opacity-50"
