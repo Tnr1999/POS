@@ -2,11 +2,12 @@
 
 /*
  * Design tokens — the shared source of truth for color across the app.
- * Reference these from JSX with Tailwind v4's CSS-variable shorthand,
- * e.g. `bg-(--surface)`, `text-(--text-muted)`, instead of hardcoding
- * `bg-white`/`text-gray-500` etc. — that's what makes dark mode below
- * apply automatically everywhere instead of needing a `dark:` variant on
- * every element.
+ * See DESIGN.md at the project root for the full system (palette
+ * rationale, typography, component rules). Reference these from JSX with
+ * Tailwind v4's CSS-variable shorthand, e.g. `bg-(--surface)`,
+ * `text-(--text-muted)`, instead of hardcoding `bg-white`/`text-gray-500`
+ * — that's what makes dark mode below apply automatically everywhere
+ * instead of needing a `dark:` variant on every element.
  *
  * `bg-white`/`text-white` are left alone on purpose: they're used as
  * literal white (button text on a dark button, the printed receipt paper)
@@ -21,10 +22,16 @@
   --text-muted: #6b7280; /* secondary text (was text-gray-500) */
   --text-muted-2: #9ca3af; /* tertiary/placeholder text (was text-gray-400) */
   --text-subtle: #374151; /* slightly dimmed body text (was text-gray-600/700) */
-  --accent: #1f2937; /* secondary dark button (was bg-gray-800) */
-  --accent-hover: #111827; /* (was bg-gray-900) */
-  --brand: #000000; /* primary action button (was bg-black) */
-  --brand-foreground: #ffffff; /* (was text-white, paired with --brand) */
+  --accent: #1f2937; /* secondary dark button ("print", "add", "save") */
+  --accent-hover: #111827;
+  /* Terracotta Ember — the one brand accent. Every primary action + the
+     customer-facing brand mark. See DESIGN.md "The One Ember Rule". */
+  --brand: #c1440e;
+  --brand-foreground: #ffffff;
+  --brand-hover: #8f3009;
+  /* status pill background for "new"/highlight chips only */
+  --chip-bg: #fdece3;
+  --chip-foreground: #8f3009;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -39,11 +46,15 @@
     --text-subtle: #d4d4d8;
     --accent: #3f3f46;
     --accent-hover: #52525b;
-    /* a solid black button all but disappears against a near-black page —
-       invert the primary action to a light chip instead, same pattern
-       GitHub/Vercel/Linear use for their primary button in dark mode */
-    --brand: #f4f4f5;
-    --brand-foreground: #18181b;
+    /* a solid terracotta button all but disappears against a near-black
+       page — invert the primary action to a light warm chip instead, same
+       pattern GitHub/Vercel/Linear use for their primary button in dark
+       mode. Still unmistakably "the brand color", just inverted. */
+    --brand: #fdece3;
+    --brand-foreground: #6b2200;
+    --brand-hover: #ffddc9;
+    --chip-bg: rgba(193, 68, 14, 0.18);
+    --chip-foreground: #f3a077;
   }
 }
 
@@ -52,6 +63,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-chonburi);
 }
 
 body {
@@ -72,6 +84,50 @@ textarea {
 button {
   min-height: 2.5rem;
   touch-action: manipulation;
+}
+
+/* Shared elevation for every card/modal/sticky-bar surface — see
+   DESIGN.md "The Flat-at-Rest Rule". Only bg/radius/shadow live here;
+   padding stays a per-instance Tailwind utility since it varies. */
+.card {
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.05),
+    0 1px 3px rgb(0 0 0 / 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    border: 1px solid var(--surface-border);
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.4),
+      0 1px 3px rgb(0 0 0 / 0.5);
+  }
+}
+
+/* Status pill — "ใหม่", "จ่ายแล้ว" etc. The only place a tinted terracotta
+   background is allowed outside the primary button. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--chip-bg);
+  color: var(--chip-foreground);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.chip-success {
+  background: rgba(22, 163, 74, 0.15);
+  color: #16a34a;
+}
+
+.chip-neutral {
+  background: var(--surface-muted);
+  color: var(--text-subtle);
 }
 
 .no-print {

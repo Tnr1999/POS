@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Chonburi } from "next/font/google";
 import { Toaster } from "@/components/Toast";
 import "./globals.css";
 
@@ -11,6 +11,14 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+// Display face for the customer-facing order page only (shop name, menu
+// section headers) — see DESIGN.md "The Two-Places Rule". Thai + Latin.
+const chonburi = Chonburi({
+  variable: "--font-chonburi",
+  weight: "400",
+  subsets: ["latin", "thai"],
 });
 
 export const metadata: Metadata = {
@@ -28,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="th"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${chonburi.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

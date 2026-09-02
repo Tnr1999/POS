@@ -34,7 +34,7 @@ export default async function TablesAdminPage() {
         </Link>
       </div>
 
-      <section className="bg-(--surface) rounded-xl shadow p-4">
+      <section className="card p-4">
         <form action={createTable} className="flex gap-2">
           <input
             name="name"
@@ -50,7 +50,7 @@ export default async function TablesAdminPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {tablesWithQr.map((table) => (
-          <div key={table.id} className="bg-(--surface) rounded-xl shadow p-4 space-y-2 text-center">
+          <div key={table.id} className="card p-4 space-y-2 text-center">
             <h2 className="font-semibold">{table.name}</h2>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={table.qrDataUrl} alt={`QR code ${table.name}`} className="mx-auto" />

@@ -170,7 +170,7 @@ export function PosBoard({
           return (
             <div
               key={order.id}
-              className={`bg-(--surface) rounded-xl shadow p-4 space-y-3 transition-shadow ${
+              className={`card p-4 space-y-3 transition-shadow ${
                 isNew ? "ring-2 ring-amber-500 animate-pulse" : ""
               }`}
             >

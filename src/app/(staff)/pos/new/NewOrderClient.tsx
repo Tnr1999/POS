@@ -73,7 +73,7 @@ export function NewOrderClient({
             {group.items.map((item) => (
               <li
                 key={item.id}
-                className="bg-(--surface) rounded-xl shadow-sm p-3 flex items-center justify-between gap-2"
+                className="card p-3 flex items-center justify-between gap-2"
               >
                 <div>
                   <p className="font-medium">{item.name}</p>

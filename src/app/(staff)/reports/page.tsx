@@ -59,7 +59,7 @@ export default async function ReportsPage({
     <div className="max-w-3xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">รายงานยอดขาย</h1>
 
-      <form className="flex flex-wrap items-end gap-3 bg-(--surface) rounded-xl shadow p-4">
+      <form className="flex flex-wrap items-end gap-3 card p-4">
         <div>
           <label className="block text-sm font-medium mb-1">จากวันที่</label>
           <input
@@ -84,17 +84,17 @@ export default async function ReportsPage({
       </form>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-(--surface) rounded-xl shadow p-4">
+        <div className="card p-4">
           <p className="text-sm text-(--text-muted)">ยอดขายรวม</p>
           <p className="text-2xl font-bold">{formatBaht(totalRevenue)} บาท</p>
         </div>
-        <div className="bg-(--surface) rounded-xl shadow p-4">
+        <div className="card p-4">
           <p className="text-sm text-(--text-muted)">จำนวนบิล</p>
           <p className="text-2xl font-bold">{paidOrders.length}</p>
         </div>
       </div>
 
-      <section className="bg-(--surface) rounded-xl shadow p-4">
+      <section className="card p-4">
         <h2 className="font-semibold mb-3">เมนูขายดี</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -121,7 +121,7 @@ export default async function ReportsPage({
         )}
       </section>
 
-      <section className="bg-(--surface) rounded-xl shadow p-4">
+      <section className="card p-4">
         <h2 className="font-semibold mb-3">รายการบิล</h2>
         <ul className="divide-y text-sm">
           {paidOrders.map((order) => {
