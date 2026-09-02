@@ -22,12 +22,12 @@ export default async function PrintTablesPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
-      <div className="flex items-center justify-between no-print">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between no-print">
         <h1 className="text-2xl font-bold">พิมพ์ QR ทุกโต๊ะ</h1>
         <PrintButton />
       </div>
 
-      <div className="grid grid-cols-2 gap-6 print:grid-cols-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 print:grid-cols-2">
         {tablesWithQr.map((table) => (
           <div
             key={table.id}

@@ -44,7 +44,7 @@ export function NewOrderClient({
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-4 pb-28">
+    <div className="max-w-2xl mx-auto space-y-4 pb-28">
       <h1 className="text-2xl font-bold">ออเดอร์ใหม่</h1>
 
       <div className="flex gap-2">
@@ -69,27 +69,27 @@ export function NewOrderClient({
       {menuGroups.map((group) => (
         <section key={group.id}>
           <h2 className="font-semibold mb-2">{group.name}</h2>
-          <ul className="space-y-2">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {group.items.map((item) => (
               <li
                 key={item.id}
-                className="bg-white rounded-xl shadow-sm p-3 flex items-center justify-between"
+                className="bg-white rounded-xl shadow-sm p-3 flex items-center justify-between gap-2"
               >
                 <div>
                   <p className="font-medium">{item.name}</p>
                   <p className="text-sm text-gray-500">{formatBaht(item.price)} บาท</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => setQty(item.id, (cart[item.id] ?? 0) - 1)}
-                    className="w-8 h-8 rounded-full bg-gray-100 font-bold"
+                    className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
                   >
                     -
                   </button>
                   <span className="w-6 text-center">{cart[item.id] ?? 0}</span>
                   <button
                     onClick={() => setQty(item.id, (cart[item.id] ?? 0) + 1)}
-                    className="w-8 h-8 rounded-full bg-gray-100 font-bold"
+                    className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
                   >
                     +
                   </button>
@@ -101,7 +101,7 @@ export function NewOrderClient({
       ))}
 
       {lines.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 max-w-lg mx-auto">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 max-w-2xl mx-auto">
           <button
             onClick={handleCreate}
             disabled={isPending}

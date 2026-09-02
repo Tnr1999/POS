@@ -82,11 +82,11 @@ export function PosBoard({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">ออเดอร์ที่เปิดอยู่</h1>
         <Link
           href="/pos/new"
-          className="bg-black text-white rounded-lg px-4 py-2 text-sm font-medium"
+          className="bg-black text-white rounded-lg px-4 py-2.5 text-sm font-medium text-center"
         >
           + ออเดอร์ใหม่ (หน้าร้าน/กลับบ้าน)
         </Link>
@@ -116,12 +116,12 @@ export function PosBoard({
                       {item.name} x{item.qty}
                     </span>
                     {item.status === "SERVED" ? (
-                      <span className="text-green-600 text-xs">เสิร์ฟแล้ว</span>
+                      <span className="text-green-600 text-xs shrink-0">เสิร์ฟแล้ว</span>
                     ) : (
                       <button
                         disabled={isPending}
                         onClick={() => handleAdvance(item.id)}
-                        className="text-xs bg-gray-100 rounded-full px-2 py-1 disabled:opacity-50"
+                        className="text-xs bg-gray-100 rounded-full px-3 py-2 shrink-0 disabled:opacity-50"
                       >
                         {ITEM_STATUS_LABEL[item.status]} → {NEXT_STATUS_LABEL[item.status]}
                       </button>
@@ -140,20 +140,20 @@ export function PosBoard({
                 onAdded={() => router.refresh()}
               />
 
-              <div className="flex items-center justify-between pt-2 border-t">
+              <div className="flex flex-col gap-2 pt-2 border-t">
                 <span className="font-semibold">รวม {formatBaht(total)} บาท</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleCancel(order.id)}
                     disabled={isPending}
-                    className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                    className="text-sm text-red-600 disabled:opacity-50 px-2"
                   >
                     ยกเลิก
                   </button>
                   <button
                     onClick={() => handlePay(order.id)}
                     disabled={isPending || order.items.length === 0}
-                    className="bg-black text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                    className="flex-1 bg-black text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
                   >
                     ชำระเงิน / พิมพ์บิล
                   </button>
@@ -189,11 +189,11 @@ function AddItemPicker({
   if (menuItems.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-2 text-sm">
+    <div className="flex flex-wrap items-center gap-2 text-sm">
       <select
         value={menuItemId}
         onChange={(e) => setMenuItemId(e.target.value)}
-        className="border rounded-lg px-2 py-1 flex-1"
+        className="border rounded-lg px-2 py-2 flex-1 min-w-[140px]"
       >
         {menuItems.map((m) => (
           <option key={m.id} value={m.id}>
@@ -207,7 +207,7 @@ function AddItemPicker({
         max={50}
         value={qty}
         onChange={(e) => setQty(Number(e.target.value))}
-        className="border rounded-lg px-2 py-1 w-16"
+        className="border rounded-lg px-2 py-2 w-16"
       />
       <button
         disabled={isPending || !menuItemId}
@@ -218,7 +218,7 @@ function AddItemPicker({
             onAdded();
           })
         }
-        className="bg-gray-800 text-white rounded-lg px-3 py-1 disabled:opacity-50"
+        className="bg-gray-800 text-white rounded-lg px-4 py-2 disabled:opacity-50"
       >
         เพิ่ม
       </button>

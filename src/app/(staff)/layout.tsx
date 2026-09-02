@@ -11,22 +11,22 @@ const NAV_LINKS = [
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col flex-1 min-h-screen">
-      <header className="no-print bg-white border-b px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
-        <nav className="flex flex-wrap gap-2">
+      <header className="no-print bg-white border-b px-2 py-2 flex items-center gap-2">
+        <nav className="flex-1 flex items-center gap-1 overflow-x-auto whitespace-nowrap">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-100"
+              className="shrink-0 inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
             >
               {link.label}
             </Link>
           ))}
         </nav>
-        <form action={logout}>
+        <form action={logout} className="shrink-0">
           <button
             type="submit"
-            className="px-3 py-1.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"
+            className="px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"
           >
             ออกจากระบบ
           </button>

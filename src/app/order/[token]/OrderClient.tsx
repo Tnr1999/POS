@@ -76,7 +76,7 @@ export function OrderClient({
   const openTotal = order?.items.reduce((sum, i) => sum + i.price * i.qty, 0) ?? 0;
 
   return (
-    <div className="max-w-lg mx-auto pb-28">
+    <div className="max-w-2xl mx-auto pb-28">
       <header className="p-4 bg-white border-b sticky top-0 z-10">
         <h1 className="text-lg font-bold">{tableName}</h1>
         <p className="text-sm text-gray-500">สแกนเพื่อสั่งอาหาร</p>
@@ -113,27 +113,27 @@ export function OrderClient({
         {menuGroups.map((group) => (
           <section key={group.id}>
             <h2 className="font-semibold mb-2">{group.name}</h2>
-            <ul className="space-y-2">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {group.items.map((item) => (
                 <li
                   key={item.id}
-                  className="bg-white rounded-xl shadow-sm p-3 flex items-center justify-between"
+                  className="bg-white rounded-xl shadow-sm p-3 flex items-center justify-between gap-2"
                 >
                   <div>
                     <p className="font-medium">{item.name}</p>
                     <p className="text-sm text-gray-500">{formatBaht(item.price)} บาท</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => setQty(item.id, (cart[item.id] ?? 0) - 1)}
-                      className="w-8 h-8 rounded-full bg-gray-100 font-bold"
+                      className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
                     >
                       -
                     </button>
                     <span className="w-6 text-center">{cart[item.id] ?? 0}</span>
                     <button
                       onClick={() => setQty(item.id, (cart[item.id] ?? 0) + 1)}
-                      className="w-8 h-8 rounded-full bg-gray-100 font-bold"
+                      className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
                     >
                       +
                     </button>
@@ -149,7 +149,7 @@ export function OrderClient({
       </main>
 
       {cartCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 max-w-lg mx-auto">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 max-w-2xl mx-auto">
           <button
             onClick={handleSubmit}
             disabled={isPending}
