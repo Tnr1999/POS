@@ -8,16 +8,18 @@
 - ปิดบิลแล้วพิมพ์ใบเสร็จ (รองรับเครื่องพิมพ์ใบเสร็จความร้อน 80mm ผ่านหน้าต่างพิมพ์ของเบราว์เซอร์)
 - จัดการเมนู/หมวดหมู่/โต๊ะ + สร้าง QR code ให้แต่ละโต๊ะ พร้อมหน้าพิมพ์ QR รวม
 - รายงานยอดขายรายวัน + เมนูขายดี
+- ใช้งานผ่านมือถือ/แท็บเล็ตได้ดี ทั้งฝั่งลูกค้าและฝั่งพนักงาน
 
-สแตกที่ใช้ (ฟรีทั้งหมด): **Next.js** (App Router) + **Prisma** + **SQLite** + **Tailwind CSS**
+สแตกที่ใช้ (ฟรีทั้งหมด): **Next.js** (App Router) + **Prisma** + **PostgreSQL** + **Tailwind CSS**
+เดพลอยฟรีบน **Vercel** (hosting) + **Supabase** (ฐานข้อมูล Postgres)
 
-## เริ่มต้นใช้งาน (รันในเครื่อง/ในร้าน)
+## เริ่มต้นใช้งาน (รันในเครื่อง)
 
-ต้องมี [Node.js](https://nodejs.org) 20+ ติดตั้งไว้ก่อน
+ต้องมี [Node.js](https://nodejs.org) 20+ และฐานข้อมูล Postgres ไว้ทดสอบ (จะใช้ Postgres ในเครื่อง หรือสร้างโปรเจกต์ Supabase ฟรีแล้วชี้มาที่นั่นเลยก็ได้ — ดูขั้นตอนด้านล่าง)
 
 ```bash
 npm install
-cp .env.example .env   # แล้วแก้รหัสผ่าน/ความลับในไฟล์ .env
+cp .env.example .env   # แล้วแก้ DATABASE_URL/DIRECT_URL ให้ชี้ไปที่ฐานข้อมูลจริง + แก้รหัสผ่าน/ความลับ
 npx prisma migrate deploy
 npx prisma db seed      # ใส่ข้อมูลตัวอย่าง (เมนู 5 รายการ, โต๊ะ 3 โต๊ะ) จะได้ทดลองใช้ได้ทันที
 npm run dev
@@ -26,6 +28,7 @@ npm run dev
 เปิด http://localhost:3000 — ระบบจะพาไปหน้า `/pos` (ต้องล็อกอินด้วยรหัสผ่านจาก `ADMIN_PASSWORD` ใน `.env`)
 
 **สำคัญ**: แก้ค่าเหล่านี้ใน `.env` ก่อนใช้งานจริง
+- `DATABASE_URL` / `DIRECT_URL` — connection string ของฐานข้อมูล Postgres (ดูวิธีตั้งค่ากับ Supabase ด้านล่าง)
 - `ADMIN_PASSWORD` — รหัสผ่านพนักงาน
 - `AUTH_SECRET` — ตั้งเป็นข้อความยาวๆ สุ่มๆ (ใช้เซ็นคุกกี้ล็อกอิน)
 - `NEXT_PUBLIC_BASE_URL` — โดเมนจริงของร้าน (ใช้สร้างลิงก์ใน QR code ให้ลูกค้าสแกน)
@@ -48,15 +51,34 @@ npm run dev
 
 ไม่ต้องติดตั้งไลบรารีหรือ SDK เพิ่มเติม ไม่มีค่าใช้จ่าย
 
-## Deploy ให้ใช้งานจริงแบบฟรี
+## Deploy ฟรีด้วย Vercel + Supabase
 
-โปรเจกต์นี้ใช้ SQLite (ไฟล์เดียว) ซึ่งง่ายที่สุดสำหรับรันในร้าน (เครื่อง POS/คอมพิวเตอร์ในร้านเครื่องเดียว) แต่ **ไม่เหมาะกับการ deploy บน serverless เช่น Vercel** เพราะไฟล์ระบบเป็นแบบชั่วคราว ข้อมูลจะหายเมื่อรีเดพลอย มีทางเลือกฟรี 2 แบบ:
+### 1. สร้างฐานข้อมูลที่ Supabase (ฟรี)
 
-### แบบที่ 1: รันในร้านเอง (แนะนำ, ง่ายที่สุด, ฟรี 100%)
-รันคำสั่ง `npm run build && npm run start` บนคอมพิวเตอร์/มินิพีซีในร้าน (เช่น Raspberry Pi, โน้ตบุ๊กเก่า) แล้วให้มือถือลูกค้ากับพนักงานเข้าผ่าน Wi-Fi วงเดียวกัน (ตั้ง `NEXT_PUBLIC_BASE_URL` เป็น IP เครื่องนั้น) ข้อมูลอยู่ในไฟล์ `dev.db` เครื่องเดียว ไม่มีค่าใช้จ่ายรายเดือนเลย
+1. สมัคร/ล็อกอินที่ [supabase.com](https://supabase.com) แล้วสร้างโปรเจกต์ใหม่ (free tier)
+2. ไปที่ **Project Settings → Database → Connection string**
+3. คัดลอก 2 ค่านี้มาเตรียมไว้:
+   - **Transaction pooler** (พอร์ต `6543`) → ใช้เป็น `DATABASE_URL` (แอปใช้เชื่อมต่อตอนรันจริง)
+   - **Direct connection** (พอร์ต `5432`) → ใช้เป็น `DIRECT_URL` (ใช้ตอนรัน migration เท่านั้น)
+4. รัน migration เข้าฐานข้อมูลจริงจากเครื่องตัวเอง (ครั้งแรกครั้งเดียว หรือทุกครั้งที่แก้ schema):
+   ```bash
+   DATABASE_URL="<transaction pooler url>" DIRECT_URL="<direct url>" npx prisma migrate deploy
+   DATABASE_URL="<transaction pooler url>" npx prisma db seed   # ถ้าต้องการข้อมูลตัวอย่าง
+   ```
 
-### แบบที่ 2: Deploy ขึ้นคลาวด์ฟรี (เข้าถึงได้จากทุกที่)
-ใช้ [Vercel free tier](https://vercel.com) สำหรับตัวเว็บแอป และเปลี่ยนฐานข้อมูลจาก SQLite ไฟล์เป็น [Turso](https://turso.tech) (LibSQL, มี free tier) ซึ่งใช้ได้กับ Prisma ผ่าน driver adapter (`@prisma/adapter-libsql`) — ดูวิธีตั้งค่าใน `.agents/skills/prisma-database-setup/references/sqlite.md` ที่ติดมากับโปรเจกต์นี้แล้ว
+### 2. Deploy เว็บแอปที่ Vercel (ฟรี)
+
+1. Push โค้ดขึ้น GitHub แล้วไปที่ [vercel.com](https://vercel.com) → New Project → เลือก repo นี้
+2. ตั้งค่า Environment Variables ในหน้าตั้งค่าโปรเจกต์ Vercel ให้ตรงกับ `.env.example`:
+   - `DATABASE_URL` = Transaction pooler URL จาก Supabase
+   - `DIRECT_URL` = Direct connection URL จาก Supabase
+   - `ADMIN_PASSWORD`, `AUTH_SECRET` = ตั้งค่าจริงของร้าน (อย่าใช้ค่าตัวอย่าง)
+   - `NEXT_PUBLIC_BASE_URL` = โดเมนที่ Vercel ให้มา เช่น `https://your-shop.vercel.app`
+   - `NEXT_PUBLIC_SHOP_NAME` = ชื่อร้าน
+3. กด Deploy — ทุกครั้งที่ deploy ระบบจะรัน `prisma migrate deploy` ให้อัตโนมัติก่อน build (ดูใน `package.json` script `build`) ฐานข้อมูลจะอัปเดตตาม schema ล่าสุดเสมอ
+4. เข้าเว็บที่โดเมนของ Vercel แล้วไปตั้งเมนู/โต๊ะได้เลย ทุกอย่างฟรี (Vercel free tier + Supabase free tier รองรับร้านขนาดเล็ก-กลางได้สบาย)
+
+> ทางเลือกอื่นที่ไม่ต้องพึ่งคลาวด์เลย: รัน `npm run build && npm run start` บนคอมพิวเตอร์ในร้านเอง (ต้องมี Postgres รันอยู่ในเครื่องนั้นด้วย) แล้วให้มือถือลูกค้า/พนักงานเข้าผ่าน Wi-Fi วงเดียวกัน (ตั้ง `NEXT_PUBLIC_BASE_URL` เป็น IP เครื่องนั้น)
 
 ## โครงสร้างสิทธิ์การเข้าถึง
 
@@ -67,8 +89,8 @@ npm run dev
 
 ```bash
 npm run dev              # รันโหมดพัฒนา
-npm run build            # build สำหรับ production
+npm run build            # รัน migration ค้างอยู่ + build สำหรับ production
 npm run start            # รันเซิร์ฟเวอร์ production (ต้อง build ก่อน)
 npx prisma studio        # เปิดหน้าดู/แก้ข้อมูลในฐานข้อมูล
-npx prisma migrate dev   # แก้ schema แล้วสร้าง migration ใหม่
+npx prisma migrate dev   # แก้ schema แล้วสร้าง migration ใหม่ (ใช้ตอนพัฒนา)
 ```

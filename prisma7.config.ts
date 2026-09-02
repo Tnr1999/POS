@@ -10,6 +10,11 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // The Prisma CLI (migrate/studio/db pull) only ever uses this `url` -
+    // point it at the direct (non-pooled) connection, since Supabase's
+    // pooled connection can't reliably run schema migrations. The running
+    // app connects separately (see src/lib/prisma.ts) using DATABASE_URL,
+    // the pooled connection meant for normal queries.
+    url: process.env["DIRECT_URL"],
   },
 });
