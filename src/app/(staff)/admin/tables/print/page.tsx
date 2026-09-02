@@ -21,7 +21,9 @@ export default async function PrintTablesPage() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
+    // Always renders as a light "sheet of paper" preview, independent of
+    // site theme — this page's whole purpose is what comes out on paper.
+    <div className="max-w-4xl mx-auto space-y-4 bg-white text-black min-h-screen p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between no-print">
         <h1 className="text-2xl font-bold">พิมพ์ QR ทุกโต๊ะ</h1>
         <PrintButton />
@@ -31,7 +33,7 @@ export default async function PrintTablesPage() {
         {tablesWithQr.map((table) => (
           <div
             key={table.id}
-            className="border rounded-xl p-6 text-center break-inside-avoid"
+            className="border border-black/20 rounded-xl p-6 text-center break-inside-avoid"
           >
             <h2 className="text-xl font-bold mb-2">{table.name}</h2>
             {/* eslint-disable-next-line @next/next/no-img-element */}

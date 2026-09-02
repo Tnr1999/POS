@@ -77,9 +77,9 @@ export function OrderClient({
 
   return (
     <div className="max-w-2xl mx-auto pb-28">
-      <header className="p-4 bg-white border-b sticky top-0 z-10">
+      <header className="p-4 bg-(--surface) border-b sticky top-0 z-10">
         <h1 className="text-lg font-bold">{tableName}</h1>
-        <p className="text-sm text-gray-500">สแกนเพื่อสั่งอาหาร</p>
+        <p className="text-sm text-(--text-muted)">สแกนเพื่อสั่งอาหาร</p>
       </header>
 
       {order && order.items.length > 0 && (
@@ -91,7 +91,7 @@ export function OrderClient({
                 <span>
                   {item.name} x{item.qty}
                 </span>
-                <span className="text-gray-500">
+                <span className="text-(--text-muted)">
                   {STATUS_LABEL[item.status] ?? item.status}
                 </span>
               </li>
@@ -117,23 +117,23 @@ export function OrderClient({
               {group.items.map((item) => (
                 <li
                   key={item.id}
-                  className="bg-white rounded-xl shadow-sm p-3 flex items-center justify-between gap-2"
+                  className="bg-(--surface) rounded-xl shadow-sm p-3 flex items-center justify-between gap-2"
                 >
                   <div>
                     <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-500">{formatBaht(item.price)} บาท</p>
+                    <p className="text-sm text-(--text-muted)">{formatBaht(item.price)} บาท</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => setQty(item.id, (cart[item.id] ?? 0) - 1)}
-                      className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
+                      className="w-10 h-10 rounded-full bg-(--surface-muted) font-bold text-lg"
                     >
                       -
                     </button>
                     <span className="w-6 text-center">{cart[item.id] ?? 0}</span>
                     <button
                       onClick={() => setQty(item.id, (cart[item.id] ?? 0) + 1)}
-                      className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
+                      className="w-10 h-10 rounded-full bg-(--surface-muted) font-bold text-lg"
                     >
                       +
                     </button>
@@ -144,16 +144,16 @@ export function OrderClient({
           </section>
         ))}
         {menuGroups.length === 0 && (
-          <p className="text-center text-gray-400">ยังไม่มีเมนูให้สั่ง</p>
+          <p className="text-center text-(--text-muted-2)">ยังไม่มีเมนูให้สั่ง</p>
         )}
       </main>
 
       {cartCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 max-w-2xl mx-auto">
+        <div className="fixed bottom-0 left-0 right-0 bg-(--surface) border-t p-4 max-w-2xl mx-auto">
           <button
             onClick={handleSubmit}
             disabled={isPending}
-            className="w-full bg-black text-white rounded-xl py-3 font-semibold flex justify-between px-4 disabled:opacity-50"
+            className="w-full bg-(--brand) text-(--brand-foreground) rounded-xl py-3 font-semibold flex justify-between px-4 disabled:opacity-50"
           >
             <span>สั่งอาหาร ({cartCount})</span>
             <span>{formatBaht(cartTotal)} บาท</span>

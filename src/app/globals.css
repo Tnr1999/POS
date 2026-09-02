@@ -1,8 +1,50 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens — the shared source of truth for color across the app.
+ * Reference these from JSX with Tailwind v4's CSS-variable shorthand,
+ * e.g. `bg-(--surface)`, `text-(--text-muted)`, instead of hardcoding
+ * `bg-white`/`text-gray-500` etc. — that's what makes dark mode below
+ * apply automatically everywhere instead of needing a `dark:` variant on
+ * every element.
+ *
+ * `bg-white`/`text-white` are left alone on purpose: they're used as
+ * literal white (button text on a dark button, the printed receipt paper)
+ * which must stay white in both themes, not "the current surface color".
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f9fafb; /* page background */
+  --foreground: #111827; /* page text */
+  --surface: #ffffff; /* card / header / modal background */
+  --surface-muted: #f3f4f6; /* soft accents: qty steppers, hover states */
+  --surface-border: #e5e7eb; /* borders on top of --surface */
+  --text-muted: #6b7280; /* secondary text (was text-gray-500) */
+  --text-muted-2: #9ca3af; /* tertiary/placeholder text (was text-gray-400) */
+  --text-subtle: #374151; /* slightly dimmed body text (was text-gray-600/700) */
+  --accent: #1f2937; /* secondary dark button (was bg-gray-800) */
+  --accent-hover: #111827; /* (was bg-gray-900) */
+  --brand: #000000; /* primary action button (was bg-black) */
+  --brand-foreground: #ffffff; /* (was text-white, paired with --brand) */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #e5e7eb;
+    --surface: #18181b;
+    --surface-muted: #27272a;
+    --surface-border: #3f3f46;
+    --text-muted: #a1a1aa;
+    --text-muted-2: #71717a;
+    --text-subtle: #d4d4d8;
+    --accent: #3f3f46;
+    --accent-hover: #52525b;
+    /* a solid black button all but disappears against a near-black page —
+       invert the primary action to a light chip instead, same pattern
+       GitHub/Vercel/Linear use for their primary button in dark mode */
+    --brand: #f4f4f5;
+    --brand-foreground: #18181b;
+  }
 }
 
 @theme inline {
@@ -41,7 +83,10 @@ button {
     display: none !important;
   }
 
+  /* Printed output (receipts, QR sheets) must always come out black-on-
+     white on paper, regardless of whether the screen is in dark mode. */
   body {
     background: #ffffff;
+    color: #000000;
   }
 }
