@@ -11,10 +11,12 @@ export default defineConfig({
   },
   datasource: {
     // The Prisma CLI (migrate/studio/db pull) only ever uses this `url` -
-    // point it at the direct (non-pooled) connection, since Supabase's
-    // pooled connection can't reliably run schema migrations. The running
-    // app connects separately (see src/lib/prisma.ts) using DATABASE_URL,
-    // the pooled connection meant for normal queries.
+    // point it at DIRECT_URL (Supabase's Session pooler: same pooler host as
+    // DATABASE_URL, but port 5432). Transaction-mode pooling (port 6543)
+    // can't run schema DDL, and Supabase's true "Direct connection" host is
+    // IPv6-only by default, which fails from Vercel's build (no IPv6
+    // egress) with "Can't reach database server" (P1001). The running app
+    // connects separately (see src/lib/prisma.ts) using DATABASE_URL.
     url: process.env["DIRECT_URL"],
   },
 });

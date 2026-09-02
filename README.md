@@ -57,9 +57,9 @@ npm run dev
 
 1. สมัคร/ล็อกอินที่ [supabase.com](https://supabase.com) แล้วสร้างโปรเจกต์ใหม่ (free tier)
 2. ไปที่ **Project Settings → Database → Connection string**
-3. คัดลอก 2 ค่านี้มาเตรียมไว้:
-   - **Transaction pooler** (พอร์ต `6543`) → ใช้เป็น `DATABASE_URL` (แอปใช้เชื่อมต่อตอนรันจริง)
-   - **Direct connection** (พอร์ต `5432`) → ใช้เป็น `DIRECT_URL` (ใช้ตอนรัน migration เท่านั้น)
+3. คัดลอก 2 ค่านี้มาเตรียมไว้ (**ห้ามใช้แท็บ "Direct connection"** — host นั้น (`db.<ref>.supabase.co`) รองรับ IPv6 อย่างเดียวโดย default ซึ่ง Vercel build ต่อไม่ได้ จะ error `P1001: Can't reach database server`):
+   - แท็บ **Transaction pooler** (พอร์ต `6543`) → ใช้เป็น `DATABASE_URL` (แอปใช้เชื่อมต่อตอนรันจริง)
+   - แท็บ **Session pooler** (host เดียวกับ Transaction pooler แต่พอร์ต `5432`) → ใช้เป็น `DIRECT_URL` (ใช้ตอนรัน migration เท่านั้น)
 4. รัน migration เข้าฐานข้อมูลจริงจากเครื่องตัวเอง (ครั้งแรกครั้งเดียว หรือทุกครั้งที่แก้ schema):
    ```bash
    DATABASE_URL="<transaction pooler url>" DIRECT_URL="<direct url>" npx prisma migrate deploy
@@ -70,8 +70,8 @@ npm run dev
 
 1. Push โค้ดขึ้น GitHub แล้วไปที่ [vercel.com](https://vercel.com) → New Project → เลือก repo นี้
 2. ตั้งค่า Environment Variables ในหน้าตั้งค่าโปรเจกต์ Vercel ให้ตรงกับ `.env.example`:
-   - `DATABASE_URL` = Transaction pooler URL จาก Supabase
-   - `DIRECT_URL` = Direct connection URL จาก Supabase
+   - `DATABASE_URL` = Transaction pooler URL จาก Supabase (พอร์ต 6543)
+   - `DIRECT_URL` = Session pooler URL จาก Supabase (host เดียวกัน พอร์ต 5432 - **ไม่ใช่** Direct connection)
    - `ADMIN_PASSWORD`, `AUTH_SECRET` = ตั้งค่าจริงของร้าน (อย่าใช้ค่าตัวอย่าง)
    - `NEXT_PUBLIC_BASE_URL` = โดเมนที่ Vercel ให้มา เช่น `https://your-shop.vercel.app`
    - `NEXT_PUBLIC_SHOP_NAME` = ชื่อร้าน
