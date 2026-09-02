@@ -13,7 +13,7 @@ type Order = {
   createdAt: string;
   items: OrderItem[];
 };
-type MenuItem = { id: string; name: string; price: number };
+type MenuItem = { id: string; name: string; price: number; trackStock: boolean; stock: number };
 
 const ITEM_STATUS_LABEL: Record<string, string> = {
   PENDING: "รอทำ",
@@ -198,6 +198,7 @@ function AddItemPicker({
         {menuItems.map((m) => (
           <option key={m.id} value={m.id}>
             {m.name}
+            {m.trackStock && m.stock <= 5 ? ` (เหลือ ${m.stock})` : ""}
           </option>
         ))}
       </select>

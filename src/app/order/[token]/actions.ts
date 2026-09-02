@@ -2,52 +2,64 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { consumeStock } from "@/lib/stock";
 
 export type CartLine = { menuItemId: string; qty: number; note?: string };
+export type PlaceOrderResult = { unavailable: string[] };
 
-export async function placeOrder(token: string, cart: CartLine[]) {
+export async function placeOrder(token: string, cart: CartLine[]): Promise<PlaceOrderResult> {
   const table = await prisma.table.findUnique({ where: { token } });
   if (!table) {
     throw new Error("ไม่พบโต๊ะนี้ กรุณาสแกน QR code ใหม่อีกครั้ง");
   }
 
   const lines = cart.filter((line) => Number.isInteger(line.qty) && line.qty > 0);
-  if (lines.length === 0) return;
+  if (lines.length === 0) return { unavailable: [] };
 
   const menuItems = await prisma.menuItem.findMany({
     where: { id: { in: lines.map((l) => l.menuItemId) }, active: true },
   });
   const menuItemById = new Map(menuItems.map((m) => [m.id, m]));
 
-  let order = await prisma.order.findFirst({
-    where: { tableId: table.id, status: "OPEN" },
-  });
-  if (!order) {
-    order = await prisma.order.create({
-      data: { tableId: table.id, type: "DINE_IN", status: "OPEN" },
+  const unavailable: string[] = [];
+
+  await prisma.$transaction(async (tx) => {
+    let order = await tx.order.findFirst({
+      where: { tableId: table.id, status: "OPEN" },
     });
-  }
+    if (!order) {
+      order = await tx.order.create({
+        data: { tableId: table.id, type: "DINE_IN", status: "OPEN" },
+      });
+    }
 
-  const itemsToCreate = lines
-    .map((line) => {
+    for (const line of lines) {
       const menuItem = menuItemById.get(line.menuItemId);
-      if (!menuItem) return null;
-      return {
-        orderId: order!.id,
-        menuItemId: menuItem.id,
-        name: menuItem.name,
-        price: menuItem.price,
-        qty: Math.min(line.qty, 50),
-        note: line.note?.slice(0, 200) || null,
-        status: "PENDING",
-      };
-    })
-    .filter((item): item is NonNullable<typeof item> => item !== null);
+      if (!menuItem) continue;
 
-  if (itemsToCreate.length === 0) return;
+      const qty = Math.min(line.qty, 50);
+      const ok = await consumeStock(tx, menuItem, qty);
+      if (!ok) {
+        unavailable.push(menuItem.name);
+        continue;
+      }
 
-  await prisma.orderItem.createMany({ data: itemsToCreate });
+      await tx.orderItem.create({
+        data: {
+          orderId: order.id,
+          menuItemId: menuItem.id,
+          name: menuItem.name,
+          price: menuItem.price,
+          qty,
+          note: line.note?.slice(0, 200) || null,
+          status: "PENDING",
+        },
+      });
+    }
+  });
 
   revalidatePath(`/order/${token}`);
   revalidatePath("/pos");
+
+  return { unavailable };
 }

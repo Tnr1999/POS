@@ -18,17 +18,33 @@ model Category {
 }
 
 model MenuItem {
-  id         String      @id @default(cuid())
-  name       String
-  price      Int
-  imageUrl   String?
-  active     Boolean     @default(true)
-  categoryId String?
-  category   Category?   @relation(fields: [categoryId], references: [id])
-  orderItems OrderItem[]
-  createdAt  DateTime    @default(now())
+  id             String          @id @default(cuid())
+  name           String
+  price          Int
+  imageUrl       String?
+  active         Boolean         @default(true)
+  trackStock     Boolean         @default(false)
+  stock          Int             @default(0)
+  categoryId     String?
+  category       Category?       @relation(fields: [categoryId], references: [id])
+  orderItems     OrderItem[]
+  stockMovements StockMovement[]
+  createdAt      DateTime        @default(now())
 
   @@index([categoryId])
+}
+
+// type: SALE (order placed) | RESTORE (order/item cancelled) | RESTOCK | ADJUSTMENT
+model StockMovement {
+  id         String   @id @default(cuid())
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  type       String
+  qtyChange  Int
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([menuItemId])
 }
 
 model Table {

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireStaff } from "@/lib/session";
+import { consumeStock, restoreStock } from "@/lib/stock";
 
 const ITEM_STATUS_ORDER = ["PENDING", "PREPARING", "SERVED"];
 
@@ -23,21 +24,29 @@ export async function addItemToOrder(orderId: string, menuItemId: string, qty: n
   await requireStaff();
   if (!Number.isInteger(qty) || qty <= 0) return;
 
-  const [order, menuItem] = await Promise.all([
-    prisma.order.findUnique({ where: { id: orderId } }),
-    prisma.menuItem.findUnique({ where: { id: menuItemId } }),
-  ]);
-  if (!order || order.status !== "OPEN" || !menuItem) return;
+  await prisma.$transaction(async (tx) => {
+    const [order, menuItem] = await Promise.all([
+      tx.order.findUnique({ where: { id: orderId } }),
+      tx.menuItem.findUnique({ where: { id: menuItemId } }),
+    ]);
+    if (!order || order.status !== "OPEN" || !menuItem) return;
 
-  await prisma.orderItem.create({
-    data: {
-      orderId,
-      menuItemId: menuItem.id,
-      name: menuItem.name,
-      price: menuItem.price,
-      qty: Math.min(qty, 50),
-      status: "PENDING",
-    },
+    const boundedQty = Math.min(qty, 50);
+    const ok = await consumeStock(tx, menuItem, boundedQty);
+    if (!ok) {
+      throw new Error(`${menuItem.name} มีสต็อกไม่พอ (เหลือ ${menuItem.stock})`);
+    }
+
+    await tx.orderItem.create({
+      data: {
+        orderId,
+        menuItemId: menuItem.id,
+        name: menuItem.name,
+        price: menuItem.price,
+        qty: boundedQty,
+        status: "PENDING",
+      },
+    });
   });
   revalidatePath("/pos");
 }
@@ -45,40 +54,48 @@ export async function addItemToOrder(orderId: string, menuItemId: string, qty: n
 export async function createWalkInOrder(
   type: "DINE_IN" | "TAKEAWAY",
   lines: { menuItemId: string; qty: number }[]
-): Promise<string | null> {
+): Promise<{ orderId: string | null; unavailable: string[] }> {
   await requireStaff();
   const validLines = lines.filter((l) => Number.isInteger(l.qty) && l.qty > 0);
-  if (validLines.length === 0) return null;
+  if (validLines.length === 0) return { orderId: null, unavailable: [] };
 
   const menuItems = await prisma.menuItem.findMany({
     where: { id: { in: validLines.map((l) => l.menuItemId) } },
   });
   const menuItemById = new Map(menuItems.map((m) => [m.id, m]));
+  const unavailable: string[] = [];
 
-  const order = await prisma.order.create({
-    data: {
-      type,
-      status: "OPEN",
-      items: {
-        create: validLines
-          .map((line) => {
-            const menuItem = menuItemById.get(line.menuItemId);
-            if (!menuItem) return null;
-            return {
-              menuItemId: menuItem.id,
-              name: menuItem.name,
-              price: menuItem.price,
-              qty: Math.min(line.qty, 50),
-              status: "PENDING",
-            };
-          })
-          .filter((x): x is NonNullable<typeof x> => x !== null),
-      },
-    },
+  const orderId = await prisma.$transaction(async (tx) => {
+    const order = await tx.order.create({ data: { type, status: "OPEN" } });
+
+    for (const line of validLines) {
+      const menuItem = menuItemById.get(line.menuItemId);
+      if (!menuItem) continue;
+
+      const qty = Math.min(line.qty, 50);
+      const ok = await consumeStock(tx, menuItem, qty);
+      if (!ok) {
+        unavailable.push(menuItem.name);
+        continue;
+      }
+
+      await tx.orderItem.create({
+        data: {
+          orderId: order.id,
+          menuItemId: menuItem.id,
+          name: menuItem.name,
+          price: menuItem.price,
+          qty,
+          status: "PENDING",
+        },
+      });
+    }
+
+    return order.id;
   });
 
   revalidatePath("/pos");
-  return order.id;
+  return { orderId, unavailable };
 }
 
 export async function payOrder(orderId: string): Promise<void> {
@@ -93,9 +110,18 @@ export async function payOrder(orderId: string): Promise<void> {
 
 export async function cancelOrder(orderId: string): Promise<void> {
   await requireStaff();
-  await prisma.order.update({
-    where: { id: orderId },
-    data: { status: "CANCELLED" },
+  await prisma.$transaction(async (tx) => {
+    const order = await tx.order.update({
+      where: { id: orderId },
+      data: { status: "CANCELLED" },
+      include: { items: true },
+    });
+
+    for (const item of order.items) {
+      if (item.menuItemId && item.status !== "CANCELLED") {
+        await restoreStock(tx, item.menuItemId, item.qty, "ยกเลิกออเดอร์");
+      }
+    }
   });
   revalidatePath("/pos");
 }

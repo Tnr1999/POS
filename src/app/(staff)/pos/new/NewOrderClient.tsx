@@ -4,7 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { formatBaht } from "@/lib/money";
 
-type MenuItem = { id: string; name: string; price: number };
+type MenuItem = {
+  id: string;
+  name: string;
+  price: number;
+  trackStock: boolean;
+  stock: number;
+};
 type MenuGroup = { id: string; name: string; items: MenuItem[] };
 
 export function NewOrderClient({
@@ -15,11 +21,12 @@ export function NewOrderClient({
   createWalkInOrder: (
     type: "DINE_IN" | "TAKEAWAY",
     lines: { menuItemId: string; qty: number }[]
-  ) => Promise<string | null>;
+  ) => Promise<{ orderId: string | null; unavailable: string[] }>;
 }) {
   const [type, setType] = useState<"DINE_IN" | "TAKEAWAY">("TAKEAWAY");
   const [cart, setCart] = useState<Record<string, number>>({});
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const allItems = menuGroups.flatMap((g) => g.items);
@@ -31,21 +38,38 @@ export function NewOrderClient({
     return sum + (item ? item.price * l.qty : 0);
   }, 0);
 
-  function setQty(itemId: string, qty: number) {
-    setCart((prev) => ({ ...prev, [itemId]: Math.max(0, Math.min(50, qty)) }));
+  function maxQtyOf(item: MenuItem): number {
+    return item.trackStock ? Math.max(0, item.stock) : 50;
+  }
+  function isSoldOut(item: MenuItem): boolean {
+    return item.trackStock && item.stock <= 0;
+  }
+
+  function setQty(item: MenuItem, qty: number) {
+    setCart((prev) => ({ ...prev, [item.id]: Math.max(0, Math.min(maxQtyOf(item), qty)) }));
   }
 
   function handleCreate() {
     if (lines.length === 0) return;
+    setError(null);
     startTransition(async () => {
-      const orderId = await createWalkInOrder(type, lines);
-      if (orderId) router.push("/pos");
+      const result = await createWalkInOrder(type, lines);
+      if (result.unavailable.length > 0) {
+        setError(`${result.unavailable.join(", ")} มีสต็อกไม่พอ ไม่ได้เพิ่มในออเดอร์`);
+      }
+      if (result.orderId) router.push("/pos");
     });
   }
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 pb-28">
       <h1 className="text-2xl font-bold">ออเดอร์ใหม่</h1>
+
+      {error && (
+        <div className="p-3 bg-red-100 text-red-700 text-center text-sm rounded-lg">
+          {error}
+        </div>
+      )}
 
       <div className="flex gap-2">
         <button
@@ -70,32 +94,46 @@ export function NewOrderClient({
         <section key={group.id}>
           <h2 className="font-semibold mb-2">{group.name}</h2>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {group.items.map((item) => (
-              <li
-                key={item.id}
-                className="bg-white rounded-xl shadow-sm p-3 flex items-center justify-between gap-2"
-              >
-                <div>
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-gray-500">{formatBaht(item.price)} บาท</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => setQty(item.id, (cart[item.id] ?? 0) - 1)}
-                    className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
-                  >
-                    -
-                  </button>
-                  <span className="w-6 text-center">{cart[item.id] ?? 0}</span>
-                  <button
-                    onClick={() => setQty(item.id, (cart[item.id] ?? 0) + 1)}
-                    className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
-                  >
-                    +
-                  </button>
-                </div>
-              </li>
-            ))}
+            {group.items.map((item) => {
+              const soldOut = isSoldOut(item);
+              const qty = cart[item.id] ?? 0;
+              const atMax = item.trackStock && qty >= maxQtyOf(item);
+              return (
+                <li
+                  key={item.id}
+                  className={`bg-white rounded-xl shadow-sm p-3 flex items-center justify-between gap-2 ${
+                    soldOut ? "opacity-50" : ""
+                  }`}
+                >
+                  <div>
+                    <p className="font-medium">{item.name}</p>
+                    <p className="text-sm text-gray-500">{formatBaht(item.price)} บาท</p>
+                    {soldOut && <p className="text-xs text-red-600 font-medium">หมด</p>}
+                    {!soldOut && item.trackStock && item.stock <= 5 && (
+                      <p className="text-xs text-amber-600">เหลือ {item.stock}</p>
+                    )}
+                  </div>
+                  {!soldOut && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => setQty(item, qty - 1)}
+                        className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
+                      >
+                        -
+                      </button>
+                      <span className="w-6 text-center">{qty}</span>
+                      <button
+                        onClick={() => setQty(item, qty + 1)}
+                        disabled={atMax}
+                        className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg disabled:opacity-30"
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       ))}

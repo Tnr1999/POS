@@ -12,10 +12,16 @@ export async function GET(
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const order = await prisma.order.findFirst({
-    where: { tableId: table.id, status: "OPEN" },
-    include: { items: { orderBy: { createdAt: "asc" } } },
-  });
+  const [order, trackedItems] = await Promise.all([
+    prisma.order.findFirst({
+      where: { tableId: table.id, status: "OPEN" },
+      include: { items: { orderBy: { createdAt: "asc" } } },
+    }),
+    prisma.menuItem.findMany({
+      where: { active: true, trackStock: true },
+      select: { id: true, stock: true },
+    }),
+  ]);
 
   return NextResponse.json({
     order: order
@@ -31,5 +37,6 @@ export async function GET(
           })),
         }
       : null,
+    stock: Object.fromEntries(trackedItems.map((i) => [i.id, i.stock])),
   });
 }

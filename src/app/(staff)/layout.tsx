@@ -4,6 +4,7 @@ import { logout } from "@/app/login/actions";
 const NAV_LINKS = [
   { href: "/pos", label: "หน้าขาย" },
   { href: "/admin/menu", label: "จัดการเมนู" },
+  { href: "/admin/stock", label: "คลังสินค้า" },
   { href: "/admin/tables", label: "จัดการโต๊ะ / QR" },
   { href: "/reports", label: "รายงานยอดขาย" },
 ];

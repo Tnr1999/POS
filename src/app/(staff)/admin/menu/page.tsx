@@ -66,6 +66,19 @@ export default async function MenuAdminPage() {
               </option>
             ))}
           </select>
+          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+            <input type="checkbox" name="trackStock" className="w-4 h-4" />
+            ตัดสต็อก
+          </label>
+          <input
+            name="stock"
+            type="number"
+            min="0"
+            step="1"
+            defaultValue={0}
+            placeholder="จำนวนสต็อกเริ่มต้น"
+            className="border rounded-lg px-3 py-2 sm:col-span-2"
+          />
           <button className="bg-black text-white rounded-lg px-4 py-2 font-medium sm:col-span-4">
             เพิ่มเมนู
           </button>
@@ -105,7 +118,15 @@ function MenuItemList({
   items,
   categories,
 }: {
-  items: { id: string; name: string; price: number; active: boolean; categoryId: string | null }[];
+  items: {
+    id: string;
+    name: string;
+    price: number;
+    active: boolean;
+    categoryId: string | null;
+    trackStock: boolean;
+    stock: number;
+  }[];
   categories: { id: string; name: string }[];
 }) {
   return (
@@ -144,9 +165,34 @@ function MenuItemList({
                 บันทึก
               </button>
             </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="trackStock"
+                defaultChecked={item.trackStock}
+                className="w-4 h-4"
+              />
+              ตัดสต็อก
+            </label>
+            <input
+              name="stock"
+              type="number"
+              min="0"
+              step="1"
+              defaultValue={item.stock}
+              placeholder="จำนวนสต็อก"
+              className="border rounded-lg px-3 py-2 sm:col-span-2"
+            />
           </form>
-          <div className="flex items-center gap-3 mt-2 text-sm">
+          <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
             <span className="text-gray-500">{formatBaht(item.price)} บาท</span>
+            {item.trackStock && (
+              <span
+                className={item.stock <= 5 ? "text-red-600 font-medium" : "text-gray-500"}
+              >
+                สต็อก: {item.stock}
+              </span>
+            )}
             <form
               action={async () => {
                 "use server";

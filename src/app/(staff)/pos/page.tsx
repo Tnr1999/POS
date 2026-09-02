@@ -31,7 +31,9 @@ export default async function PosPage() {
   return (
     <PosBoard
       initialOrders={initialOrders}
-      menuItems={menuItems.map((m) => ({ id: m.id, name: m.name, price: m.price }))}
+      menuItems={menuItems
+        .filter((m) => !m.trackStock || m.stock > 0)
+        .map((m) => ({ id: m.id, name: m.name, price: m.price, trackStock: m.trackStock, stock: m.stock }))}
       advanceOrderItemStatus={advanceOrderItemStatus}
       addItemToOrder={addItemToOrder}
       payOrder={payOrder}
