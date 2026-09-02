@@ -154,7 +154,7 @@ export function PosBoard({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">ออเดอร์ที่เปิดอยู่</h1>
+        <h1 className="page-title text-2xl font-bold">ออเดอร์ที่เปิดอยู่</h1>
         <Link
           href="/pos/new"
           className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2.5 text-sm font-medium text-center"

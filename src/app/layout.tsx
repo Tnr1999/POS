@@ -29,9 +29,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // lets the browser theme its own chrome (scrollbar, form controls) to
-  // match — the page itself follows prefers-color-scheme via globals.css
-  colorScheme: "light dark",
+  // no dark mode — always light/cream regardless of the OS/browser theme
+  // setting (per feedback: "don't like the black background at all")
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

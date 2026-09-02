@@ -6,17 +6,11 @@ colors:
   terracotta-deep: "#8f3009"
   terracotta-tint: "#fdece3"
   neutral-bg: "#faf3e6"
-  neutral-bg-dark: "#0a0a0a"
   neutral-surface: "#ffffff"
-  neutral-surface-dark: "#18181b"
   neutral-surface-muted: "#f5ecdc"
-  neutral-surface-muted-dark: "#27272a"
   neutral-border: "#ece0cc"
-  neutral-border-dark: "#3f3f46"
   ink: "#111827"
-  ink-dark: "#e5e7eb"
   ink-muted: "#6b7280"
-  ink-muted-dark: "#a1a1aa"
   ink-subtle: "#374151"
   success: "#16a34a"
   danger: "#dc2626"
@@ -95,32 +89,32 @@ This system explicitly rejects: the generic flat-gray SaaS dashboard the app shi
 - One warm accent (terracotta) carries every primary action and brand moment — nowhere else.
 - Staff surfaces are quiet and dense; the customer ordering surface is the one place allowed to feel inviting.
 - Flat, tonal depth (soft shadows only), not glassy or skeuomorphic.
-- Print artifacts (receipt, QR sheet) are always literal black-on-white, independent of on-screen theme.
-- Full `prefers-color-scheme` dark mode: every token has a dark counterpart, not a bolted-on class.
+- Print artifacts (receipt, QR sheet) are always literal black-on-white.
+- **No dark mode, on purpose.** Tried it (full `prefers-color-scheme` support); feedback was "don't like the black background at all". The app now always renders the light/cream palette — `colorScheme: "light"` in the root layout — regardless of the OS/browser theme.
 
 ## 2. Colors
 
-Warm and restrained: a single terracotta accent against quiet neutral grays, with a light and dark counterpart for every neutral so the system holds up under either theme.
+Warm and restrained: a single terracotta accent against quiet neutral grays. One palette only — no dark-mode counterpart (see Overview: dark mode was tried and dropped).
 
 ### Primary
 - **Terracotta Ember** (`#c1440e`): every primary call-to-action — "สั่งอาหาร" (place order), "รับเงิน" (take payment), "เข้าสู่ระบบ" (log in), the customer-facing brand mark. Hover/active state is **Terracotta Ember Deep** (`#8f3009`).
 - **Terracotta Tint** (`#fdece3`): soft background for "new"/highlight chips and the customer's live-order banner — the only place a tinted terracotta background appears.
 
 ### Neutral
-- **Kitchen White** (`#ffffff` / dark: `#18181b`): card, header, and modal surfaces (`--surface`).
-- **Counter Cream** (`#faf3e6` / dark: `#0a0a0a`): page background (`--background`) — warm cream, not cool gray, so the page reads "cozy corner shop" rather than "SaaS dashboard" (per feedback: keep it playful/friendly).
-- **Soft Cream** (`#f5ecdc` / dark: `#27272a`): qty steppers, hover states, soft accents (`--surface-muted`).
-- **Hairline** (`#ece0cc` / dark: `#3f3f46`): borders on top of a surface (`--surface-border`).
-- **Ink** (`#111827` / dark: `#e5e7eb`): primary text (`--foreground`).
-- **Ink Muted** (`#6b7280` / dark: `#a1a1aa`): secondary text — prices, timestamps, helper copy (`--text-muted`).
-- **Ink Subtle** (`#374151` / dark: `#d4d4d8`): dimmed body text, e.g. secondary link (`--text-subtle`).
-- **Charcoal** (`#1f2937` / dark: `#3f3f46`): secondary dark button/pill — "print," "add," "save" actions that aren't the primary action (`--accent`).
+- **Kitchen White** (`#ffffff`): card, header, and modal surfaces (`--surface`).
+- **Counter Cream** (`#faf3e6`): page background (`--background`) — warm cream, not cool gray, so the page reads "cozy corner shop" rather than "SaaS dashboard" (per feedback: keep it playful/friendly).
+- **Soft Cream** (`#f5ecdc`): qty steppers, hover states, soft accents (`--surface-muted`).
+- **Hairline** (`#ece0cc`): borders on top of a surface (`--surface-border`).
+- **Ink** (`#111827`): primary text (`--foreground`).
+- **Ink Muted** (`#6b7280`): secondary text — prices, timestamps, helper copy (`--text-muted`).
+- **Ink Subtle** (`#374151`): dimmed body text, e.g. secondary link (`--text-subtle`).
+- **Charcoal** (`#1f2937`): secondary dark button/pill — "print," "add," "save" actions that aren't the primary action (`--accent`).
 
 ### Semantic
-Text uses `--text-success` / `--text-warning` / `--text-danger` (not plain Tailwind `green-600`/`amber-600`/`red-600` — those fail 4.5:1 in one theme or the other; found and fixed during the accessibility QA pass). Solid button/badge backgrounds still use plain Tailwind stops since white text on them is checked separately.
-- **Success** (light `#15803d` / dark `#4ade80`): served, paid, menu item turned back on.
-- **Danger** (light `#b91c1c` / dark `#f87171`): delete/cancel text and confirm-dialog "danger" tone. The danger *button* background stays `red-600`/`red-700` (white text on it already clears 4.5:1).
-- **Warning** (light `#b45309` / dark `#fbbf24`): "ปิดขายชั่วคราว," QR-regenerate warning tone. Kept a clear hue-step away from terracotta (amber/gold vs. rust-orange) so it never gets mistaken for the brand accent. The warning *button* background is `amber-700`/`amber-800`, not `amber-600` — white text on amber-600 was only 3.2:1.
+Text uses `--text-success` / `--text-warning` / `--text-danger` (not plain Tailwind `green-600`/`amber-600`/`red-600` — those failed 4.5:1 against this palette in a couple of spots; found and fixed during the accessibility QA pass). Solid button/badge backgrounds still use plain Tailwind stops since white text on them is checked separately.
+- **Success** (`#15803d`): served, paid, menu item turned back on.
+- **Danger** (`#b91c1c`): delete/cancel text and confirm-dialog "danger" tone. The danger *button* background stays `red-600`/`red-700` (white text on it already clears 4.5:1).
+- **Warning** (`#b45309`): "ปิดขายชั่วคราว," QR-regenerate warning tone. Kept a clear hue-step away from terracotta (amber/gold vs. rust-orange) so it never gets mistaken for the brand accent. The warning *button* background is `amber-700`/`amber-800`, not `amber-600` — white text on amber-600 was only 3.2:1.
 
 ### Named Rules
 **The One Ember Rule.** Terracotta appears on exactly one primary action per screen and the customer brand mark. If a screen has two terracotta buttons competing for attention, one of them is wrong — demote it to `button-ghost` or `--accent`.
@@ -150,7 +144,7 @@ Text uses `--text-success` / `--text-warning` / `--text-danger` (not plain Tailw
 Flat by default, with one soft ambient shadow reserved for surfaces that sit "above" the page — cards, the sticky header, modals, toasts. No layered shadow scale, no glass blur. Depth comes from `--surface` vs `--background` contrast first, shadow second.
 
 ### Shadow Vocabulary
-- **card** (`box-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 1px 3px rgb(0 0 0 / 0.1)`; dark: `0 1px 2px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.5)`): every card, the sticky order header, the confirm dialog, the toast stack.
+- **card** (`box-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 1px 3px rgb(0 0 0 / 0.1)`): every card, the sticky order header, the confirm dialog, the toast stack.
 - **floating** (`box-shadow: 0 10px 30px rgb(0 0 0 / 0.15)`): the fixed bottom cart bar on the customer order page and the "new order" pos card ring — reserved for the one element per screen the user's thumb is about to hit.
 
 ### Named Rules
@@ -160,7 +154,7 @@ Flat by default, with one soft ambient shadow reserved for surfaces that sit "ab
 
 ### Buttons
 - **Shape:** 8px radius (`--rounded-sm`), never fully pill-shaped except status chips.
-- **Primary:** `background: var(--brand)` / light mode = Terracotta Ember, dark mode = a light warm chip (`#fef3ec`) with `--brand-foreground` ink text — inverting so it doesn't vanish against a near-black page. Padding `10px 20px`, weight 500.
+- **Primary:** `background: var(--brand)` (Terracotta Ember) with `--brand-foreground` (white) text. Padding `10px 20px`, weight 500.
 - **Secondary/Ghost:** `background: var(--accent)` (Charcoal) with white text, for "print," "add item," "save" — one visual step down from primary so the terracotta CTA still reads as *the* action.
 - **Danger/Warning:** solid `--danger`/`--warning`, white text — reserved for `ConfirmButton`'s two destructive tones plus the cancel-order action.
 - **Hover / Focus:** primary and secondary darken by one step on hover (`--brand-hover`/`--accent-hover`); every interactive element keeps the browser's default focus ring (never `outline: none` without a visible replacement).
@@ -173,7 +167,7 @@ Flat by default, with one soft ambient shadow reserved for surfaces that sit "ab
 - **Corner style:** 16px radius (`--rounded-lg`) — noticeably softer than buttons, so cards read as "container" and buttons read as "action."
 - **Background:** `--surface`.
 - **Shadow:** `card` shadow from Elevation.
-- **Border:** none in light mode (shadow alone separates card from page); dark mode adds a 1px `--surface-border` hairline since shadows read weaker against a dark page.
+- **Border:** none — shadow alone separates card from page.
 - **Internal padding:** 16px (`--spacing-md`), 24px on the login/error single-card pages.
 
 ### Inputs / Fields
@@ -196,7 +190,8 @@ Flat by default, with one soft ambient shadow reserved for surfaces that sit "ab
 - **Do** use Kanit only for the customer order page's shop name and menu section headers — Geist Sans everywhere else, including every staff screen.
 - **Do** keep the receipt and QR print sheet literal `bg-white`/`text-black`, independent of the viewer's OS theme.
 - **Do** give every destructive action (`ConfirmButton`) a named confirm label ("ลบเมนู"), never a bare "ยืนยัน."
-- **Do** keep every token defined for both light and dark (`prefers-color-scheme`) — no new hardcoded `bg-white`/`bg-gray-*`/`text-gray-*` utility.
+- **Do** reference the CSS custom properties (`bg-(--surface)`, `text-(--text-muted)`) rather than a new hardcoded `bg-white`/`bg-gray-*`/`text-gray-*` utility — even with no dark mode, the tokens are still the single source of truth if the palette ever changes.
+- **Don't** reintroduce `prefers-color-scheme: dark` styling — it was tried and explicitly dropped per feedback ("don't like the black background at all").
 
 ### Don't:
 - **Don't** add a second terracotta button on the same screen — demote it to ghost/charcoal instead.
