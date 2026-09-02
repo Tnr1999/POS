@@ -38,7 +38,7 @@ export function Toaster() {
           key={item.id}
           role="status"
           className={`pointer-events-auto max-w-sm rounded-lg px-4 py-2.5 text-sm font-medium text-white shadow-lg ${
-            item.type === "error" ? "bg-red-600" : "bg-gray-900"
+            item.type === "error" ? "bg-red-600" : "bg-(--accent)"
           }`}
         >
           {item.message}

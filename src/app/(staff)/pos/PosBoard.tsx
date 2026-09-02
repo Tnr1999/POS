@@ -157,7 +157,7 @@ export function PosBoard({
         <h1 className="text-2xl font-bold">ออเดอร์ที่เปิดอยู่</h1>
         <Link
           href="/pos/new"
-          className="bg-black text-white rounded-lg px-4 py-2.5 text-sm font-medium text-center"
+          className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2.5 text-sm font-medium text-center"
         >
           + ออเดอร์ใหม่ (หน้าร้าน/กลับบ้าน)
         </Link>
@@ -170,7 +170,7 @@ export function PosBoard({
           return (
             <div
               key={order.id}
-              className={`bg-white rounded-xl shadow p-4 space-y-3 transition-shadow ${
+              className={`bg-(--surface) rounded-xl shadow p-4 space-y-3 transition-shadow ${
                 isNew ? "ring-2 ring-amber-500 animate-pulse" : ""
               }`}
             >
@@ -183,7 +183,7 @@ export function PosBoard({
                     </span>
                   )}
                 </h2>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-(--text-muted-2)">
                   {new Date(order.createdAt).toLocaleTimeString("th-TH", {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -203,7 +203,7 @@ export function PosBoard({
                       <button
                         disabled={isPending}
                         onClick={() => handleAdvance(item.id)}
-                        className="text-xs bg-gray-100 rounded-full px-3 py-2 shrink-0 disabled:opacity-50"
+                        className="text-xs bg-(--surface-muted) rounded-full px-3 py-2 shrink-0 disabled:opacity-50"
                       >
                         {ITEM_STATUS_LABEL[item.status]} → {NEXT_STATUS_LABEL[item.status]}
                       </button>
@@ -211,7 +211,7 @@ export function PosBoard({
                   </li>
                 ))}
                 {order.items.length === 0 && (
-                  <li className="text-gray-400">ยังไม่มีรายการ</li>
+                  <li className="text-(--text-muted-2)">ยังไม่มีรายการ</li>
                 )}
               </ul>
 
@@ -238,7 +238,7 @@ export function PosBoard({
                   <button
                     onClick={() => handlePay(order.id)}
                     disabled={isPending || order.items.length === 0}
-                    className="flex-1 bg-black text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                    className="flex-1 bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
                   >
                     ชำระเงิน / พิมพ์บิล
                   </button>
@@ -250,7 +250,7 @@ export function PosBoard({
       </div>
 
       {orders.length === 0 && (
-        <p className="text-gray-400 text-center py-8">ยังไม่มีออเดอร์ที่เปิดอยู่</p>
+        <p className="text-(--text-muted-2) text-center py-8">ยังไม่มีออเดอร์ที่เปิดอยู่</p>
       )}
     </div>
   );
@@ -307,7 +307,7 @@ function AddItemPicker({
             }
           })
         }
-        className="bg-gray-800 text-white rounded-lg px-4 py-2 disabled:opacity-50"
+        className="bg-(--accent) text-white rounded-lg px-4 py-2 disabled:opacity-50"
       >
         เพิ่ม
       </button>

@@ -22,15 +22,18 @@ export default async function ReceiptPage({
   const when = order.paidAt ?? order.createdAt;
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
+    <div className="min-h-screen bg-(--surface-muted) py-8 px-4">
       <div className="no-print max-w-[320px] mx-auto flex justify-between mb-4">
-        <Link href="/pos" className="text-sm text-gray-600 hover:underline">
+        <Link href="/pos" className="text-sm text-(--text-subtle) hover:underline">
           ← กลับหน้าขาย
         </Link>
         <PrintButton label="พิมพ์ใบเสร็จ" />
       </div>
 
-      <div className="receipt bg-white mx-auto p-4 text-sm font-mono">
+      {/* The printed slip itself stays literal white/black on-screen too —
+          it's meant to preview exactly what comes out of the receipt
+          printer, independent of the site's own light/dark theme. */}
+      <div className="receipt bg-white text-black mx-auto p-4 text-sm font-mono">
         <div className="text-center space-y-1 mb-3">
           <p className="font-bold text-base">{shopName}</p>
           <p>

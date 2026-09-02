@@ -8,7 +8,7 @@ type Tone = "danger" | "warning" | "neutral";
 const TONE_CLASSES: Record<Tone, string> = {
   danger: "bg-red-600 hover:bg-red-700",
   warning: "bg-amber-600 hover:bg-amber-700",
-  neutral: "bg-gray-800 hover:bg-gray-900",
+  neutral: "bg-(--accent) hover:bg-(--accent-hover)",
 };
 
 /**
@@ -67,19 +67,19 @@ export function ConfirmButton({
           <div
             role="alertdialog"
             aria-modal="true"
-            className="w-full max-w-sm space-y-4 rounded-xl bg-white p-5 shadow-xl"
+            className="w-full max-w-sm space-y-4 rounded-xl bg-(--surface) p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="space-y-1">
-              <h2 className="font-semibold text-gray-900">{confirmTitle}</h2>
-              <p className="text-sm text-gray-500">{confirmMessage}</p>
+              <h2 className="font-semibold text-(--foreground)">{confirmTitle}</h2>
+              <p className="text-sm text-(--text-muted)">{confirmMessage}</p>
             </div>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 disabled={isPending}
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-(--text-subtle) hover:bg-(--surface-muted) disabled:opacity-50"
               >
                 {cancelLabel}
               </button>

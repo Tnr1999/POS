@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { formatBaht } from "@/lib/money";
+import { formatBaht, toBaht } from "@/lib/money";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import {
   createCategory,
@@ -26,7 +26,7 @@ export default async function MenuAdminPage() {
     <div className="max-w-4xl mx-auto space-y-8">
       <h1 className="text-2xl font-bold">จัดการเมนู</h1>
 
-      <section className="bg-white rounded-xl shadow p-4 space-y-3">
+      <section className="bg-(--surface) rounded-xl shadow p-4 space-y-3">
         <h2 className="font-semibold">เพิ่มหมวดหมู่</h2>
         <form action={createCategory} className="flex gap-2">
           <input
@@ -35,13 +35,13 @@ export default async function MenuAdminPage() {
             required
             className="flex-1 border rounded-lg px-3 py-2"
           />
-          <button className="bg-black text-white rounded-lg px-4 py-2 font-medium">
+          <button className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2 font-medium">
             เพิ่ม
           </button>
         </form>
       </section>
 
-      <section className="bg-white rounded-xl shadow p-4 space-y-3">
+      <section className="bg-(--surface) rounded-xl shadow p-4 space-y-3">
         <h2 className="font-semibold">เพิ่มเมนู</h2>
         <form action={createMenuItem} className="grid grid-cols-1 sm:grid-cols-4 gap-2">
           <input
@@ -67,14 +67,14 @@ export default async function MenuAdminPage() {
               </option>
             ))}
           </select>
-          <button className="bg-black text-white rounded-lg px-4 py-2 font-medium sm:col-span-4">
+          <button className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2 font-medium sm:col-span-4">
             เพิ่มเมนู
           </button>
         </form>
       </section>
 
       {categories.map((category) => (
-        <section key={category.id} className="bg-white rounded-xl shadow p-4 space-y-3">
+        <section key={category.id} className="bg-(--surface) rounded-xl shadow p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">{category.name}</h2>
             <ConfirmButton
@@ -95,7 +95,7 @@ export default async function MenuAdminPage() {
       ))}
 
       {uncategorized.length > 0 && (
-        <section className="bg-white rounded-xl shadow p-4 space-y-3">
+        <section className="bg-(--surface) rounded-xl shadow p-4 space-y-3">
           <h2 className="font-semibold">ไม่มีหมวดหมู่</h2>
           <MenuItemList items={uncategorized} categories={categories} />
         </section>
@@ -127,7 +127,7 @@ function MenuItemList({
               type="number"
               step="0.01"
               min="0"
-              defaultValue={(item.price / 100).toString()}
+              defaultValue={toBaht(item.price)}
               className="border rounded-lg px-3 py-2"
             />
             <select
@@ -143,13 +143,13 @@ function MenuItemList({
               ))}
             </select>
             <div className="flex gap-2">
-              <button className="bg-gray-800 text-white rounded-lg px-3 py-2 text-sm">
+              <button className="bg-(--accent) text-white rounded-lg px-3 py-2 text-sm">
                 บันทึก
               </button>
             </div>
           </form>
           <div className="flex items-center gap-3 mt-2 text-sm">
-            <span className="text-gray-500">{formatBaht(item.price)} บาท</span>
+            <span className="text-(--text-muted)">{formatBaht(item.price)} บาท</span>
             <form
               action={async () => {
                 "use server";
@@ -179,13 +179,13 @@ function MenuItemList({
               ลบ
             </ConfirmButton>
             {!item.active && (
-              <span className="text-gray-400">(ปิดขายอยู่ ลูกค้าจะไม่เห็นเมนูนี้)</span>
+              <span className="text-(--text-muted-2)">(ปิดขายอยู่ ลูกค้าจะไม่เห็นเมนูนี้)</span>
             )}
           </div>
         </li>
       ))}
       {items.length === 0 && (
-        <li className="py-3 text-sm text-gray-400">ยังไม่มีเมนูในหมวดนี้</li>
+        <li className="py-3 text-sm text-(--text-muted-2)">ยังไม่มีเมนูในหมวดนี้</li>
       )}
     </ul>
   );

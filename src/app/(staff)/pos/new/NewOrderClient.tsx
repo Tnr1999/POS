@@ -51,7 +51,7 @@ export function NewOrderClient({
         <button
           onClick={() => setType("TAKEAWAY")}
           className={`flex-1 rounded-lg py-2 font-medium ${
-            type === "TAKEAWAY" ? "bg-black text-white" : "bg-white border"
+            type === "TAKEAWAY" ? "bg-(--brand) text-(--brand-foreground)" : "bg-(--surface) border"
           }`}
         >
           กลับบ้าน
@@ -59,7 +59,7 @@ export function NewOrderClient({
         <button
           onClick={() => setType("DINE_IN")}
           className={`flex-1 rounded-lg py-2 font-medium ${
-            type === "DINE_IN" ? "bg-black text-white" : "bg-white border"
+            type === "DINE_IN" ? "bg-(--brand) text-(--brand-foreground)" : "bg-(--surface) border"
           }`}
         >
           นั่งทานที่ร้าน (ไม่ผ่าน QR)
@@ -73,23 +73,23 @@ export function NewOrderClient({
             {group.items.map((item) => (
               <li
                 key={item.id}
-                className="bg-white rounded-xl shadow-sm p-3 flex items-center justify-between gap-2"
+                className="bg-(--surface) rounded-xl shadow-sm p-3 flex items-center justify-between gap-2"
               >
                 <div>
                   <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-gray-500">{formatBaht(item.price)} บาท</p>
+                  <p className="text-sm text-(--text-muted)">{formatBaht(item.price)} บาท</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => setQty(item.id, (cart[item.id] ?? 0) - 1)}
-                    className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
+                    className="w-10 h-10 rounded-full bg-(--surface-muted) font-bold text-lg"
                   >
                     -
                   </button>
                   <span className="w-6 text-center">{cart[item.id] ?? 0}</span>
                   <button
                     onClick={() => setQty(item.id, (cart[item.id] ?? 0) + 1)}
-                    className="w-10 h-10 rounded-full bg-gray-100 font-bold text-lg"
+                    className="w-10 h-10 rounded-full bg-(--surface-muted) font-bold text-lg"
                   >
                     +
                   </button>
@@ -101,11 +101,11 @@ export function NewOrderClient({
       ))}
 
       {lines.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 max-w-2xl mx-auto">
+        <div className="fixed bottom-0 left-0 right-0 bg-(--surface) border-t p-4 max-w-2xl mx-auto">
           <button
             onClick={handleCreate}
             disabled={isPending}
-            className="w-full bg-black text-white rounded-xl py-3 font-semibold flex justify-between px-4 disabled:opacity-50"
+            className="w-full bg-(--brand) text-(--brand-foreground) rounded-xl py-3 font-semibold flex justify-between px-4 disabled:opacity-50"
           >
             <span>สร้างออเดอร์</span>
             <span>{formatBaht(total)} บาท</span>

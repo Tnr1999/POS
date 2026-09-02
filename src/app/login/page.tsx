@@ -8,10 +8,10 @@ export default async function LoginPage({
   const { from, error } = await searchParams;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-(--background) px-4">
       <form
         action={login}
-        className="w-full max-w-sm bg-white rounded-xl shadow p-6 space-y-4"
+        className="w-full max-w-sm bg-(--surface) rounded-xl shadow p-6 space-y-4"
       >
         <h1 className="text-xl font-bold text-center">เข้าสู่ระบบพนักงาน</h1>
         <input type="hidden" name="from" value={from ?? "/pos"} />
@@ -35,7 +35,7 @@ export default async function LoginPage({
 
         <button
           type="submit"
-          className="w-full bg-black text-white rounded-lg py-2 font-medium"
+          className="w-full bg-(--brand) text-(--brand-foreground) rounded-lg py-2 font-medium"
         >
           เข้าสู่ระบบ
         </button>

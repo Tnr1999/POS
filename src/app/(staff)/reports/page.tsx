@@ -59,7 +59,7 @@ export default async function ReportsPage({
     <div className="max-w-3xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">รายงานยอดขาย</h1>
 
-      <form className="flex flex-wrap items-end gap-3 bg-white rounded-xl shadow p-4">
+      <form className="flex flex-wrap items-end gap-3 bg-(--surface) rounded-xl shadow p-4">
         <div>
           <label className="block text-sm font-medium mb-1">จากวันที่</label>
           <input
@@ -78,28 +78,28 @@ export default async function ReportsPage({
             className="border rounded-lg px-3 py-2"
           />
         </div>
-        <button className="bg-black text-white rounded-lg px-4 py-2 font-medium">
+        <button className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2 font-medium">
           ดูรายงาน
         </button>
       </form>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl shadow p-4">
-          <p className="text-sm text-gray-500">ยอดขายรวม</p>
+        <div className="bg-(--surface) rounded-xl shadow p-4">
+          <p className="text-sm text-(--text-muted)">ยอดขายรวม</p>
           <p className="text-2xl font-bold">{formatBaht(totalRevenue)} บาท</p>
         </div>
-        <div className="bg-white rounded-xl shadow p-4">
-          <p className="text-sm text-gray-500">จำนวนบิล</p>
+        <div className="bg-(--surface) rounded-xl shadow p-4">
+          <p className="text-sm text-(--text-muted)">จำนวนบิล</p>
           <p className="text-2xl font-bold">{paidOrders.length}</p>
         </div>
       </div>
 
-      <section className="bg-white rounded-xl shadow p-4">
+      <section className="bg-(--surface) rounded-xl shadow p-4">
         <h2 className="font-semibold mb-3">เมนูขายดี</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-gray-500">
+              <tr className="text-left text-(--text-muted)">
                 <th className="py-1">เมนู</th>
                 <th className="py-1 text-right">จำนวน</th>
                 <th className="py-1 text-right">ยอดขาย</th>
@@ -117,11 +117,11 @@ export default async function ReportsPage({
           </table>
         </div>
         {topItems.length === 0 && (
-          <p className="text-sm text-gray-400">ไม่มีข้อมูลในช่วงเวลานี้</p>
+          <p className="text-sm text-(--text-muted-2)">ไม่มีข้อมูลในช่วงเวลานี้</p>
         )}
       </section>
 
-      <section className="bg-white rounded-xl shadow p-4">
+      <section className="bg-(--surface) rounded-xl shadow p-4">
         <h2 className="font-semibold mb-3">รายการบิล</h2>
         <ul className="divide-y text-sm">
           {paidOrders.map((order) => {
@@ -142,7 +142,7 @@ export default async function ReportsPage({
           })}
         </ul>
         {paidOrders.length === 0 && (
-          <p className="text-sm text-gray-400">ยังไม่มีบิลที่ชำระในช่วงเวลานี้</p>
+          <p className="text-sm text-(--text-muted-2)">ยังไม่มีบิลที่ชำระในช่วงเวลานี้</p>
         )}
       </section>
     </div>
