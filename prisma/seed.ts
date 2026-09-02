@@ -1,0 +1,62 @@
+import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { nanoid } from "nanoid";
+
+const adapter = new PrismaBetterSqlite3({
+  url: process.env.DATABASE_URL ?? "file:./dev.db",
+});
+const prisma = new PrismaClient({ adapter });
+
+async function main() {
+  const drinks = await prisma.category.upsert({
+    where: { id: "cat-drinks" },
+    update: {},
+    create: { id: "cat-drinks", name: "เครื่องดื่ม", sortOrder: 1 },
+  });
+  const food = await prisma.category.upsert({
+    where: { id: "cat-food" },
+    update: {},
+    create: { id: "cat-food", name: "อาหาร", sortOrder: 0 },
+  });
+
+  const menuItems = [
+    { id: "item-fried-rice", name: "ข้าวผัดหมู", price: 5000, categoryId: food.id },
+    { id: "item-pad-thai", name: "ผัดไทย", price: 6000, categoryId: food.id },
+    { id: "item-som-tum", name: "ส้มตำ", price: 4500, categoryId: food.id },
+    { id: "item-tea", name: "ชาเย็น", price: 2500, categoryId: drinks.id },
+    { id: "item-water", name: "น้ำเปล่า", price: 1000, categoryId: drinks.id },
+  ];
+
+  for (const item of menuItems) {
+    await prisma.menuItem.upsert({
+      where: { id: item.id },
+      update: {},
+      create: item,
+    });
+  }
+
+  const tables = [
+    { id: "table-1", name: "โต๊ะ 1" },
+    { id: "table-2", name: "โต๊ะ 2" },
+    { id: "table-3", name: "โต๊ะ 3" },
+  ];
+
+  for (const table of tables) {
+    await prisma.table.upsert({
+      where: { id: table.id },
+      update: {},
+      create: { ...table, token: nanoid(12) },
+    });
+  }
+
+  console.log("Seed complete.");
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

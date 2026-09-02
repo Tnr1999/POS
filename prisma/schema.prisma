@@ -1,0 +1,74 @@
+// Prisma schema for the POS app.
+// Money amounts are stored as integers in satang (1 THB = 100 satang) to avoid float rounding errors.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  sortOrder Int        @default(0)
+  menuItems MenuItem[]
+}
+
+model MenuItem {
+  id         String      @id @default(cuid())
+  name       String
+  price      Int
+  imageUrl   String?
+  active     Boolean     @default(true)
+  categoryId String?
+  category   Category?   @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+  createdAt  DateTime    @default(now())
+
+  @@index([categoryId])
+}
+
+model Table {
+  id        String   @id @default(cuid())
+  name      String
+  token     String   @unique
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+// status: OPEN | PAID | CANCELLED
+// type: DINE_IN | TAKEAWAY
+model Order {
+  id        String      @id @default(cuid())
+  tableId   String?
+  table     Table?      @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  type      String      @default("DINE_IN")
+  status    String      @default("OPEN")
+  note      String?
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  paidAt    DateTime?
+
+  @@index([tableId])
+  @@index([status])
+}
+
+// status: PENDING | PREPARING | SERVED | CANCELLED
+model OrderItem {
+  id         String    @id @default(cuid())
+  orderId    String
+  order      Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId String?
+  menuItem   MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  name       String
+  price      Int
+  qty        Int       @default(1)
+  note       String?
+  status     String    @default("PENDING")
+  createdAt  DateTime  @default(now())
+
+  @@index([orderId])
+}
