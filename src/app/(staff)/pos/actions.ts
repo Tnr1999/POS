@@ -25,6 +25,11 @@ export async function addItemToOrder(orderId: string, menuItemId: string, qty: n
   if (!Number.isInteger(qty) || qty <= 0) return;
 
   await prisma.$transaction(async (tx) => {
+    // Row lock on the Order — see cancelOrder's doc comment below. Must be
+    // the first statement so the OPEN check right after it can't race with
+    // a concurrent cancelOrder for the same order.
+    await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
+
     const [order, menuItem] = await Promise.all([
       tx.order.findUnique({ where: { id: orderId } }),
       tx.menuItem.findUnique({ where: { id: menuItemId } }),
@@ -111,6 +116,14 @@ export async function payOrder(orderId: string): Promise<void> {
 export async function cancelOrder(orderId: string): Promise<void> {
   await requireStaff();
   await prisma.$transaction(async (tx) => {
+    // Row lock on the Order — the DB-level (not in-memory) lock that
+    // serializes this against a concurrent addItemToOrder for the same
+    // order, exactly like placeOrder's Table lock. Whichever transaction
+    // gets here first runs to completion before the other's status
+    // read/write proceeds, so we never end up with an item inserted after
+    // (or "during") this cancellation.
+    await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
+
     // Atomic conditional update (same pattern as consumeStock's guarded
     // updateMany in src/lib/stock.ts): only the call that actually flips the
     // order to CANCELLED proceeds to restore stock. A retried or duplicated
