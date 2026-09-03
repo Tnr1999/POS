@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { formatBaht } from "@/lib/money";
 import { BottomSheet } from "./BottomSheet";
 import { CelebrationBurst } from "./illustrations";
@@ -22,12 +22,18 @@ export function CartFlowSheet({
   tableName: string;
   onClose: () => void;
   onUpdateQty: (key: string, qty: number) => void;
-  onSubmit: () => Promise<{ unavailable: string[]; orderId: string | null }>;
+  onSubmit: (idempotencyKey: string) => Promise<{ unavailable: string[]; orderId: string | null }>;
   onViewStatus: () => void;
 }) {
   const [step, setStep] = useState<Step>("cart");
   const [unavailable, setUnavailable] = useState<string[]>([]);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState(false);
+  // One key per "ส่งออเดอร์" submission attempt (reused across retries of the
+  // same attempt, cleared when the user goes back to edit the cart) so a
+  // network retry or double-tap can't create duplicate order items — see
+  // placeOrder's doc comment in actions.ts.
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   const count = entries.reduce((sum, e) => sum + e.qty, 0);
   const subtotal = entries.reduce((sum, e) => sum + e.unitPrice * e.qty, 0);
@@ -38,19 +44,35 @@ export function CartFlowSheet({
     setTimeout(() => {
       setStep("cart");
       setUnavailable([]);
+      setSubmitError(false);
+      idempotencyKeyRef.current = null;
     }, 200);
   }
 
   async function handleConfirmSubmit() {
     setStep("sending");
-    const result = await onSubmit();
-    if (result.unavailable.length > 0) {
-      setUnavailable(result.unavailable);
-      setStep("cart");
-      return;
+    setSubmitError(false);
+    // Lazily create the key on the first attempt, then reuse it for every
+    // retry of this same submission so the server can recognize a retry.
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = crypto.randomUUID();
     }
-    setOrderId(result.orderId);
-    setStep("success");
+    try {
+      const result = await onSubmit(idempotencyKeyRef.current);
+      if (result.unavailable.length > 0) {
+        setUnavailable(result.unavailable);
+        idempotencyKeyRef.current = null;
+        setStep("cart");
+        return;
+      }
+      setOrderId(result.orderId);
+      setStep("success");
+    } catch {
+      // Network/server hiccup — stay on the confirm step so the user can
+      // retry with the same idempotency key instead of losing their cart.
+      setSubmitError(true);
+      setStep("confirm");
+    }
   }
 
   return (
@@ -115,7 +137,10 @@ export function CartFlowSheet({
               </div>
               <button
                 type="button"
-                onClick={() => setStep("confirm")}
+                onClick={() => {
+                  idempotencyKeyRef.current = null;
+                  setStep("confirm");
+                }}
                 className="w-full bg-(--cta) text-white rounded-2xl py-4 font-semibold active:scale-[0.98] transition-transform"
               >
                 ส่งออเดอร์
@@ -135,6 +160,11 @@ export function CartFlowSheet({
             <p className="text-(--text-muted)">{count} รายการ</p>
             <p className="food-price text-2xl">รวม {formatBaht(subtotal)}.-</p>
           </div>
+          {submitError && (
+            <div className="p-3 rounded-xl bg-red-100 text-(--text-danger) text-sm text-left">
+              ส่งออเดอร์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง
+            </div>
+          )}
           <div className="flex gap-3">
             <button
               type="button"

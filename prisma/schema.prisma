@@ -88,5 +88,13 @@ model OrderItem {
   status     String    @default("PENDING")
   createdAt  DateTime  @default(now())
 
+  // Set only by the customer QR ordering flow (placeOrder), one unique value
+  // per cart line within a single "ส่งออเดอร์" submission — lets a retried
+  // or duplicated request detect rows it already created and skip
+  // re-inserting them instead of duplicating the order. Null for rows
+  // created by staff actions (addItemToOrder/createWalkInOrder), which
+  // don't go through this retry-prone path.
+  idempotencyKey String? @unique
+
   @@index([orderId])
 }

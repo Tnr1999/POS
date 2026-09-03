@@ -39,7 +39,11 @@ export function OrderClient({
   tableName: string;
   menuGroups: MenuGroup[];
   initialOrder: OpenOrderState;
-  placeOrder: (token: string, cart: CartLine[]) => Promise<{ unavailable: string[]; orderId: string | null }>;
+  placeOrder: (
+    token: string,
+    cart: CartLine[],
+    idempotencyKey?: string
+  ) => Promise<{ unavailable: string[]; orderId: string | null }>;
 }) {
   const [cartEntries, setCartEntries] = useState<CartEntry[]>([]);
   const [order, setOrder] = useState<OpenOrderState>(initialOrder);
@@ -224,7 +228,7 @@ export function OrderClient({
   const cartCount = cartEntries.reduce((sum, e) => sum + e.qty, 0);
   const cartTotal = cartEntries.reduce((sum, e) => sum + e.unitPrice * e.qty, 0);
 
-  async function handleSubmitOrder() {
+  async function handleSubmitOrder(idempotencyKey: string) {
     return new Promise<{ unavailable: string[]; orderId: string | null }>((resolve) => {
       startTransition(async () => {
         const lines: CartLine[] = cartEntries.map((e) => ({
@@ -234,7 +238,7 @@ export function OrderClient({
           spiceLevel: e.spiceLevel,
           addOnIds: e.addOnIds,
         }));
-        const result = await placeOrder(token, lines);
+        const result = await placeOrder(token, lines, idempotencyKey);
         if (result.unavailable.length === 0) {
           setCartEntries([]);
           await refreshOrderNow();

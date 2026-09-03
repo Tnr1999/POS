@@ -111,16 +111,26 @@ export async function payOrder(orderId: string): Promise<void> {
 export async function cancelOrder(orderId: string): Promise<void> {
   await requireStaff();
   await prisma.$transaction(async (tx) => {
-    const order = await tx.order.update({
-      where: { id: orderId },
+    // Atomic conditional update (same pattern as consumeStock's guarded
+    // updateMany in src/lib/stock.ts): only the call that actually flips the
+    // order to CANCELLED proceeds to restore stock. A retried or duplicated
+    // cancel request sees count === 0 and no-ops, so stock is never restored
+    // twice.
+    const result = await tx.order.updateMany({
+      where: { id: orderId, status: { not: "CANCELLED" } },
       data: { status: "CANCELLED" },
-      include: { items: true },
     });
+    if (result.count === 0) return;
+
+    const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
+    if (!order) return;
 
     for (const item of order.items) {
-      if (item.menuItemId && item.status !== "CANCELLED") {
+      if (item.status === "CANCELLED") continue;
+      if (item.menuItemId) {
         await restoreStock(tx, item.menuItemId, item.qty, "ยกเลิกออเดอร์");
       }
+      await tx.orderItem.update({ where: { id: item.id }, data: { status: "CANCELLED" } });
     }
   });
   revalidatePath("/pos");
