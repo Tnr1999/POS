@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { formatBaht } from "@/lib/money";
+import { EmptyState } from "@/components/EmptyState";
+import { ReportsFilterBar } from "./ReportsFilterBar";
+import { DailyRevenueChart } from "./DailyRevenueChart";
+
+const MAX_CHART_DAYS = 62;
 
 function startOfDay(date: Date) {
   const d = new Date(date);
@@ -41,6 +46,7 @@ export default async function ReportsPage({
     (sum, order) => sum + order.items.reduce((s, i) => s + i.price * i.qty, 0),
     0
   );
+  const avgPerBill = paidOrders.length > 0 ? Math.round(totalRevenue / paidOrders.length) : 0;
 
   const itemTotals = new Map<string, { qty: number; revenue: number }>();
   for (const order of paidOrders) {
@@ -55,94 +61,114 @@ export default async function ReportsPage({
     .sort((a, b) => b[1].revenue - a[1].revenue)
     .slice(0, 10);
 
+  const dayCount = Math.round((toDate.getTime() - fromDate.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+  const chartDays =
+    dayCount <= MAX_CHART_DAYS
+      ? Array.from({ length: dayCount }, (_, i) => {
+          const dayStart = startOfDay(new Date(fromDate.getTime() + i * 24 * 60 * 60 * 1000));
+          const dayEnd = endOfDay(dayStart);
+          const revenue = paidOrders
+            .filter((o) => o.paidAt && o.paidAt >= dayStart && o.paidAt <= dayEnd)
+            .reduce((s, o) => s + o.items.reduce((s2, i) => s2 + i.price * i.qty, 0), 0);
+          return {
+            label: dayStart.toLocaleDateString("th-TH", { day: "numeric", month: "short" }),
+            revenue,
+          };
+        })
+      : null;
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="page-title text-2xl font-bold">รายงานยอดขาย</h1>
+    <div className="max-w-4xl mx-auto space-y-5">
+      <h1 className="page-title">รายงานยอดขาย</h1>
 
-      <form className="flex flex-wrap items-end gap-3 card p-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">จากวันที่</label>
-          <input
-            type="date"
-            name="from"
-            defaultValue={toDateInputValue(fromDate)}
-            className="border rounded-lg px-3 py-2"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">ถึงวันที่</label>
-          <input
-            type="date"
-            name="to"
-            defaultValue={toDateInputValue(toDate)}
-            className="border rounded-lg px-3 py-2"
-          />
-        </div>
-        <button className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2 font-medium">
-          ดูรายงาน
-        </button>
-      </form>
+      <ReportsFilterBar from={toDateInputValue(fromDate)} to={toDateInputValue(toDate)} />
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div className="card p-4">
           <p className="text-sm text-(--text-muted)">ยอดขายรวม</p>
-          <p className="text-2xl font-bold text-(--brand)">{formatBaht(totalRevenue)} บาท</p>
+          <p className="text-xl sm:text-2xl font-bold text-(--brand-hover)">
+            {formatBaht(totalRevenue)} <span className="text-sm font-normal">บาท</span>
+          </p>
         </div>
         <div className="card p-4">
           <p className="text-sm text-(--text-muted)">จำนวนบิล</p>
-          <p className="text-2xl font-bold text-(--brand)">{paidOrders.length}</p>
+          <p className="text-xl sm:text-2xl font-bold text-(--brand-hover)">{paidOrders.length}</p>
+        </div>
+        <div className="card p-4 col-span-2 sm:col-span-1">
+          <p className="text-sm text-(--text-muted)">ยอดเฉลี่ยต่อบิล</p>
+          <p className="text-xl sm:text-2xl font-bold text-(--brand-hover)">
+            {formatBaht(avgPerBill)} <span className="text-sm font-normal">บาท</span>
+          </p>
         </div>
       </div>
 
-      <section className="card p-4">
-        <h2 className="font-semibold mb-3">เมนูขายดี</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-(--text-muted)">
-                <th className="py-1">เมนู</th>
-                <th className="py-1 text-right">จำนวน</th>
-                <th className="py-1 text-right">ยอดขาย</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topItems.map(([name, data]) => (
-                <tr key={name} className="border-t">
-                  <td className="py-1">{name}</td>
-                  <td className="py-1 text-right">{data.qty}</td>
-                  <td className="py-1 text-right">{formatBaht(data.revenue)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {topItems.length === 0 && (
-          <p className="text-sm text-(--text-muted-2)">ไม่มีข้อมูลในช่วงเวลานี้</p>
+      <section className="card p-4 space-y-3">
+        <h2 className="section-title">ยอดขายรายวัน</h2>
+        {chartDays === null ? (
+          <p className="text-sm text-(--text-muted-2)">ช่วงเวลาที่เลือกยาวเกินไปสำหรับแสดงกราฟ</p>
+        ) : paidOrders.length === 0 ? (
+          <EmptyState title="ไม่มีข้อมูลในช่วงเวลานี้" />
+        ) : (
+          <DailyRevenueChart days={chartDays} />
         )}
       </section>
 
-      <section className="card p-4">
-        <h2 className="font-semibold mb-3">รายการบิล</h2>
-        <ul className="divide-y text-sm">
-          {paidOrders.map((order) => {
-            const total = order.items.reduce((s, i) => s + i.price * i.qty, 0);
-            return (
-              <li key={order.id} className="py-2 flex justify-between">
-                <span>
-                  {order.table?.name ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}
-                  {" · "}
-                  {order.paidAt?.toLocaleTimeString("th-TH", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                <span className="font-medium">{formatBaht(total)} บาท</span>
-              </li>
-            );
-          })}
-        </ul>
-        {paidOrders.length === 0 && (
-          <p className="text-sm text-(--text-muted-2)">ยังไม่มีบิลที่ชำระในช่วงเวลานี้</p>
+      <section className="card p-4 space-y-3">
+        <h2 className="section-title">เมนูขายดี</h2>
+        {topItems.length === 0 ? (
+          <EmptyState title="ไม่มีข้อมูลในช่วงเวลานี้" />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-(--text-muted)">
+                  <th className="py-1.5 font-medium">เมนู</th>
+                  <th className="py-1.5 font-medium text-right">จำนวน</th>
+                  <th className="py-1.5 font-medium text-right">ยอดขาย</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topItems.map(([name, data]) => (
+                  <tr key={name} className="border-t border-(--surface-border)">
+                    <td className="py-1.5">{name}</td>
+                    <td className="py-1.5 text-right">{data.qty}</td>
+                    <td className="py-1.5 text-right">{formatBaht(data.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="card p-4 space-y-3">
+        <h2 className="section-title">รายการบิล</h2>
+        {paidOrders.length === 0 ? (
+          <EmptyState title="ยังไม่มีบิลที่ชำระในช่วงเวลานี้" />
+        ) : (
+          <ul className="divide-y divide-(--surface-border) text-sm">
+            {paidOrders.map((order) => {
+              const total = order.items.reduce((s, i) => s + i.price * i.qty, 0);
+              const shortId = order.id.slice(-6).toUpperCase();
+              return (
+                <li key={order.id} className="py-2.5 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium">
+                      {order.table?.name ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}
+                    </p>
+                    <p className="text-xs text-(--text-muted-2)">
+                      #ORD-{shortId} ·{" "}
+                      {order.paidAt?.toLocaleTimeString("th-TH", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                  <span className="font-semibold shrink-0">{formatBaht(total)} บาท</span>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
     </div>
