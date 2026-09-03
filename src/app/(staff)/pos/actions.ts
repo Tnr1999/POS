@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireStaff } from "@/lib/session";
 import { consumeStock, restoreStock } from "@/lib/stock";
+import { computeOrderPricing, isPaymentMethod, validatePayment, type DiscountInput } from "@/lib/pricing";
 
 const ITEM_STATUS_ORDER = ["PENDING", "PREPARING", "SERVED"];
 
@@ -103,12 +104,116 @@ export async function createWalkInOrder(
   return { orderId, unavailable };
 }
 
-export async function payOrder(orderId: string): Promise<void> {
+export type PayOrderOptions = {
+  /** Untrusted: validated at runtime against pricing.ts's PAYMENT_METHODS before use. Defaults to "CASH" so existing zero-arg callers keep working. */
+  paymentMethod?: string;
+  /** Satang tendered by the customer. Defaults to the computed grand total (exact payment, no change) when omitted. */
+  paidAmount?: number;
+  discount?: DiscountInput;
+  /** Basis points (1 bp = 0.01%). Defaults to 0 (no service charge). */
+  serviceChargeRateBasisPoints?: number;
+  /** Basis points (1 bp = 0.01%). Defaults to 0 (no tax/VAT). */
+  taxRateBasisPoints?: number;
+};
+
+/**
+ * Charges an OPEN order and freezes its full pricing/payment breakdown onto
+ * the Order row, matching src/lib/pricing.ts's formula. The grand total is
+ * always computed here from the order's own OrderItem rows — a caller's
+ * paidAmount is only ever validated against that server-computed total,
+ * never trusted as the total itself.
+ *
+ * Concurrency: takes the same Order row lock (SELECT ... FOR UPDATE, as the
+ * transaction's first statement) already used by cancelOrder/addItemToOrder,
+ * so a concurrent pay/cancel/addItem for the same order always fully
+ * serializes against this one — e.g. an addItemToOrder that loses the race
+ * sees status no longer OPEN and is rejected, exactly as it already is
+ * against a concurrent cancelOrder.
+ *
+ * Idempotency: if the order is already PAID, this is treated as a retry
+ * (client timeout, a refresh, a duplicate click that got through the UI's
+ * disable) and is a pure no-op — paidAt and every payment field are read
+ * but never rewritten a second time. The atomic `updateMany` guard below is
+ * a second line of defense on top of the row lock: only the call that
+ * actually observes and flips OPEN -> PAID persists anything.
+ */
+export async function payOrder(orderId: string, options: PayOrderOptions = {}): Promise<void> {
   await requireStaff();
-  await prisma.order.update({
-    where: { id: orderId },
-    data: { status: "PAID", paidAt: new Date() },
+
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
+
+    const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
+    if (!order) {
+      throw new Error("ไม่พบออเดอร์นี้");
+    }
+
+    if (order.status === "PAID") {
+      return;
+    }
+    if (order.status !== "OPEN") {
+      throw new Error("ออเดอร์นี้ไม่สามารถชำระเงินได้ในสถานะปัจจุบัน");
+    }
+
+    const paymentMethodInput = options.paymentMethod ?? "CASH";
+    if (!isPaymentMethod(paymentMethodInput)) {
+      throw new Error("วิธีชำระเงินไม่ถูกต้อง");
+    }
+    const paymentMethod = paymentMethodInput;
+
+    // Recomputed from the OrderItem rows actually committed in the DB —
+    // never trusted from the caller — so a client can't under/over-state
+    // what it owes.
+    const subtotalAmount = order.items
+      .filter((item) => item.status !== "CANCELLED")
+      .reduce((sum, item) => sum + item.price * item.qty, 0);
+
+    const pricing = computeOrderPricing({
+      subtotalAmount,
+      discount: options.discount,
+      serviceChargeRateBasisPoints: options.serviceChargeRateBasisPoints,
+      taxRateBasisPoints: options.taxRateBasisPoints,
+    });
+
+    const paidAmount = options.paidAmount ?? pricing.grandTotalAmount;
+    const validation = validatePayment({
+      paymentMethod,
+      grandTotalAmount: pricing.grandTotalAmount,
+      paidAmount,
+    });
+    if (!validation.ok) {
+      throw new Error(validation.error);
+    }
+
+    // Atomic conditional update (same guard pattern as cancelOrder): only
+    // the call that actually flips OPEN -> PAID here persists anything. The
+    // row lock above already rules out a concurrent payOrder at this point,
+    // but the guard is cheap, consistent with the rest of this file, and
+    // correct if this ever races a status change added elsewhere later.
+    const result = await tx.order.updateMany({
+      where: { id: orderId, status: "OPEN" },
+      data: {
+        status: "PAID",
+        paidAt: new Date(),
+        paymentMethod,
+        subtotalAmount: pricing.subtotalAmount,
+        discountAmount: pricing.discountAmount,
+        serviceChargeRate: options.serviceChargeRateBasisPoints ?? 0,
+        serviceChargeAmount: pricing.serviceChargeAmount,
+        taxRate: options.taxRateBasisPoints ?? 0,
+        taxAmount: pricing.taxAmount,
+        grandTotalAmount: pricing.grandTotalAmount,
+        paidAmount,
+        changeAmount: validation.changeAmount,
+      },
+    });
+    if (result.count === 0) {
+      // Lost a race despite the lock above (shouldn't happen) — treat
+      // exactly like the already-PAID retry case: no error, no mutation.
+      return;
+    }
   });
+
   revalidatePath("/pos");
   revalidatePath("/reports");
 }

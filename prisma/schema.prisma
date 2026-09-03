@@ -70,6 +70,37 @@ model Order {
   createdAt DateTime    @default(now())
   paidAt    DateTime?
 
+  // Frozen checkout snapshot, set once by payOrder when the order transitions
+  // OPEN -> PAID and never touched again afterward (a retried/duplicated
+  // payOrder call on an already-PAID order is a no-op — see payOrder's doc
+  // comment in src/app/(staff)/pos/actions.ts). All null for every order
+  // that predates this feature or was never paid (OPEN/CANCELLED) — read
+  // code must treat null here as "not applicable", never guess a value.
+  //
+  // paymentMethod: CASH | QR_PAYMENT (see src/lib/pricing.ts PAYMENT_METHODS,
+  // the single source of truth for the allowed set).
+  //
+  // All amount fields are integer satang, matching every other money field
+  // in this schema. serviceChargeRate/taxRate are integer basis points
+  // (1 bp = 0.01%, e.g. 700 = 7.00%) rather than a float percentage, so a
+  // rate can never suffer floating-point representation drift once stored -
+  // this is what lets a future receipt/report explain exactly how a bill
+  // was calculated even after the shop's configured rates change later.
+  //
+  // subtotalAmount - discountAmount + serviceChargeAmount + taxAmount
+  //   = grandTotalAmount
+  // changeAmount = paidAmount - grandTotalAmount (always 0 for QR_PAYMENT).
+  paymentMethod       String?
+  subtotalAmount      Int?
+  discountAmount      Int?
+  serviceChargeRate   Int?
+  serviceChargeAmount Int?
+  taxRate             Int?
+  taxAmount           Int?
+  grandTotalAmount    Int?
+  paidAmount          Int?
+  changeAmount        Int?
+
   @@index([tableId])
   @@index([status])
 }
