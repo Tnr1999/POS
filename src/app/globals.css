@@ -188,6 +188,29 @@ button {
   font-weight: 600;
 }
 
+/* Customer ordering page (/order/[token]) typography — a notch larger and
+   warmer than the staff app's card-title, since food photos + names are
+   the entire visual point of this page rather than one label among many
+   dense rows. */
+.page-heading {
+  font-size: clamp(1.625rem, 5vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.food-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--foreground);
+}
+
+.food-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--cta);
+}
+
 .scrollbar-none {
   scrollbar-width: none;
 }

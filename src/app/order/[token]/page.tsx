@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { supportsCustomization } from "@/lib/menuOptions";
 import { OrderClient } from "./OrderClient";
 import { placeOrder } from "./actions";
 
@@ -24,17 +25,35 @@ export default async function OrderPage({
     orderBy: { createdAt: "asc" },
   });
 
+  function toClientItem(item: (typeof categories)[number]["menuItems"][number], categoryName: string | null) {
+    return {
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      imageUrl: item.imageUrl,
+      trackStock: item.trackStock,
+      stock: item.stock,
+      isFeatured: item.isFeatured,
+      supportsCustomization: supportsCustomization(categoryName),
+    };
+  }
+
+  const menuGroups = [
+    ...categories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      items: c.menuItems.map((item) => toClientItem(item, c.name)),
+    })),
+    ...(uncategorized.length > 0
+      ? [{ id: "uncategorized", name: "อื่น ๆ", items: uncategorized.map((item) => toClientItem(item, null)) }]
+      : []),
+  ].filter((g) => g.items.length > 0);
+
   const order = await prisma.order.findFirst({
     where: { tableId: table.id, status: "OPEN" },
     include: { items: { orderBy: { createdAt: "asc" } } },
   });
-
-  const menuGroups = [
-    ...categories.map((c) => ({ id: c.id, name: c.name, items: c.menuItems })),
-    ...(uncategorized.length > 0
-      ? [{ id: "uncategorized", name: "อื่น ๆ", items: uncategorized }]
-      : []),
-  ].filter((g) => g.items.length > 0);
 
   return (
     <OrderClient

@@ -1,35 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { formatBaht } from "@/lib/money";
-import { UtensilsIcon } from "@/components/icons";
+import { DishMarkIcon, BellIcon, SearchIcon } from "@/components/icons";
+import { FoodCard } from "./FoodCard";
+import { FoodDetailSheet } from "./FoodDetailSheet";
+import { CartFlowSheet } from "./CartFlowSheet";
+import { OrderStatusSheet } from "./OrderStatusSheet";
+import { ContactSheet } from "./ContactSheet";
+import { CustomerBottomNav, type CustomerTab } from "./CustomerBottomNav";
+import { SteamingBowlIllustration, EmptyPlateDoodle, NoResultsDoodle } from "./illustrations";
+import { currentOrderStage } from "@/lib/orderProgress";
 import type { CartLine } from "./actions";
+import type { CartEntry, MenuGroup, MenuItem, OpenOrderState } from "./types";
 
-type MenuItem = {
-  id: string;
-  name: string;
-  price: number;
-  imageUrl: string | null;
-  trackStock: boolean;
-  stock: number;
-};
-type MenuGroup = { id: string; name: string; items: MenuItem[] };
-type OrderItem = { id: string; name: string; price: number; qty: number; status: string };
-type OrderState = { id: string; status: string; items: OrderItem[] } | null;
+const ALL_GROUP_ID = "__all__";
 
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: "รอครัวรับออเดอร์",
-  PREPARING: "กำลังทำ",
-  SERVED: "เสิร์ฟแล้ว",
-  CANCELLED: "ยกเลิก",
-};
-// which pill style each status gets — see DESIGN.md "Status pill" component
-const STATUS_CHIP: Record<string, string> = {
-  PENDING: "chip",
-  PREPARING: "chip",
-  SERVED: "chip chip-success",
-  CANCELLED: "chip chip-neutral",
-};
+function categoryEmoji(name: string): string {
+  if (name.includes("เครื่องดื่ม")) return "🥤";
+  if (name.includes("ของหวาน")) return "🍰";
+  if (name.includes("เส้น")) return "🍜";
+  if (name.includes("ทานเล่น")) return "🍢";
+  return "🍚";
+}
+
+function cartKey(menuItemId: string, spiceLevel?: string, addOnIds: string[] = [], note?: string): string {
+  return [menuItemId, spiceLevel ?? "", [...addOnIds].sort().join(","), note ?? ""].join("|");
+}
 
 export function OrderClient({
   token,
@@ -41,23 +38,30 @@ export function OrderClient({
   token: string;
   tableName: string;
   menuGroups: MenuGroup[];
-  initialOrder: OrderState;
-  placeOrder: (token: string, cart: CartLine[]) => Promise<{ unavailable: string[] }>;
+  initialOrder: OpenOrderState;
+  placeOrder: (token: string, cart: CartLine[]) => Promise<{ unavailable: string[]; orderId: string | null }>;
 }) {
-  const [cart, setCart] = useState<Record<string, number>>({});
-  const [order, setOrder] = useState<OrderState>(initialOrder);
+  const [cartEntries, setCartEntries] = useState<CartEntry[]>([]);
+  const [order, setOrder] = useState<OpenOrderState>(initialOrder);
   const [stockLevels, setStockLevels] = useState<Record<string, number>>({});
-  const [isPending, startTransition] = useTransition();
-  const [justSubmitted, setJustSubmitted] = useState(false);
-  const [unavailable, setUnavailable] = useState<string[]>([]);
-  const [activeGroupId, setActiveGroupId] = useState(menuGroups[0]?.id);
+  const [, startTransition] = useTransition();
+  const [query, setQuery] = useState("");
+  const [activeGroupId, setActiveGroupId] = useState(ALL_GROUP_ID);
+  const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
 
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const tabBarRef = useRef<HTMLDivElement>(null);
 
+  const allItems = useMemo(() => menuGroups.flatMap((g) => g.items), [menuGroups]);
+  const featuredItems = useMemo(() => allItems.filter((i) => i.isFeatured), [allItems]);
+
+  // Poll for order status + live stock every 5s — unchanged from the
+  // original implementation, just relocated into the redesigned component.
   useEffect(() => {
-    const interval = setInterval(async () => {
+    async function refresh() {
       try {
         const res = await fetch(`/api/public/tables/${token}`, { cache: "no-store" });
         if (!res.ok) return;
@@ -67,40 +71,66 @@ export function OrderClient({
       } catch {
         // ignore transient network errors while polling
       }
-    }, 5000);
+    }
+    const interval = setInterval(refresh, 5000);
     return () => clearInterval(interval);
   }, [token]);
 
-  function stockOf(item: MenuItem): number {
-    return stockLevels[item.id] ?? item.stock;
-  }
-  function isSoldOut(item: MenuItem): boolean {
-    return item.trackStock && stockOf(item) <= 0;
-  }
-  function maxQtyOf(item: MenuItem): number {
-    return item.trackStock ? Math.max(0, stockOf(item)) : 50;
+  /** Fetch the latest order state right away — used right after a
+   *  successful submit so "ดูสถานะออเดอร์" doesn't show stale/empty status
+   *  while waiting for the next 5s poll tick. */
+  async function refreshOrderNow() {
+    try {
+      const res = await fetch(`/api/public/tables/${token}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setOrder(data.order);
+      if (data.stock) setStockLevels(data.stock);
+    } catch {
+      // ignore — the regular poll will pick it up shortly
+    }
   }
 
-  // Scroll-spy for the sticky category tabs (GrabFood-style menu nav): the
-  // active tab is whichever section's heading has most recently scrolled
-  // past the sticky header+tab-bar line. Plain scroll-position math reads
-  // more predictably here than IntersectionObserver's rootMargin band,
-  // which under-fires for short sections that scroll past quickly.
+  const trimmedQuery = query.trim().toLowerCase();
+  const isSearching = trimmedQuery.length > 0;
+  const searchResults = useMemo(() => {
+    if (!isSearching) return [];
+    return allItems.filter(
+      (item) =>
+        item.name.toLowerCase().includes(trimmedQuery) ||
+        item.description?.toLowerCase().includes(trimmedQuery)
+    );
+  }, [allItems, isSearching, trimmedQuery]);
+
+  // Scroll-spy for the sticky category chips — client-side only, no
+  // per-click server request. Same proven approach as the previous version
+  // of this page (and the staff order builder): plain scroll-position math
+  // reads more predictably than IntersectionObserver for short sections.
   useEffect(() => {
-    const HEADER_OFFSET = 116; // sticky header + tab bar height
+    if (isSearching) return;
+    const HEADER_OFFSET = 168;
     let ticking = false;
 
     function updateActiveGroup() {
       ticking = false;
-      let current = menuGroups[0]?.id;
+
+      // If the page can't scroll any further, the last section's heading
+      // may never actually cross HEADER_OFFSET when that section is short
+      // (nothing left below it to push it up) — treat "at the bottom" as
+      // "last category is active" rather than falling back to none/oldest.
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+      if (atBottom && menuGroups.length > 0) {
+        setActiveGroupId(menuGroups[menuGroups.length - 1].id);
+        return;
+      }
+
+      let current = ALL_GROUP_ID;
       for (const group of menuGroups) {
         const el = sectionRefs.current[group.id];
         if (!el) continue;
-        if (el.getBoundingClientRect().top <= HEADER_OFFSET + 1) {
-          current = group.id;
-        }
+        if (el.getBoundingClientRect().top <= HEADER_OFFSET + 1) current = group.id;
       }
-      if (current) setActiveGroupId(current);
+      setActiveGroupId(current);
     }
 
     function onScroll() {
@@ -112,72 +142,189 @@ export function OrderClient({
     updateActiveGroup();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [menuGroups]);
+  }, [menuGroups, isSearching]);
 
   useEffect(() => {
-    if (!activeGroupId) return;
-    tabRefs.current[activeGroupId]?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
-    });
+    tabRefs.current[activeGroupId]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   }, [activeGroupId]);
 
   function scrollToGroup(id: string) {
     setActiveGroupId(id);
+    if (id === ALL_GROUP_ID) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     const el = sectionRefs.current[id];
     if (!el) return;
-    const y = el.getBoundingClientRect().top + window.scrollY - 104; // clear the sticky header + tab bar
+    const y = el.getBoundingClientRect().top + window.scrollY - 116;
     window.scrollTo({ top: y, behavior: "smooth" });
   }
 
-  const cartLines: CartLine[] = Object.entries(cart)
-    .filter(([, qty]) => qty > 0)
-    .map(([menuItemId, qty]) => ({ menuItemId, qty }));
-
-  const allItems = menuGroups.flatMap((g) => g.items);
-  const cartTotal = cartLines.reduce((sum, line) => {
-    const item = allItems.find((i) => i.id === line.menuItemId);
-    return sum + (item ? item.price * line.qty : 0);
-  }, 0);
-  const cartCount = cartLines.reduce((sum, l) => sum + l.qty, 0);
-
-  function setQty(item: MenuItem, qty: number) {
-    const clamped = Math.max(0, Math.min(maxQtyOf(item), qty));
-    setCart((prev) => ({ ...prev, [item.id]: clamped }));
+  function stockOf(item: MenuItem): number {
+    return stockLevels[item.id] ?? item.stock;
+  }
+  function isSoldOut(item: MenuItem): boolean {
+    return item.trackStock && stockOf(item) <= 0;
+  }
+  function maxQtyOf(item: MenuItem): number {
+    return item.trackStock ? Math.max(0, stockOf(item)) : 50;
   }
 
-  function handleSubmit() {
-    if (cartLines.length === 0) return;
-    startTransition(async () => {
-      const result = await placeOrder(token, cartLines);
-      setCart({});
-      if (result.unavailable.length > 0) {
-        setUnavailable(result.unavailable);
-        setTimeout(() => setUnavailable([]), 5000);
-      } else {
-        setJustSubmitted(true);
-        setTimeout(() => setJustSubmitted(false), 3000);
+  function addToCart(
+    item: MenuItem,
+    input: { qty: number; unitPrice: number; spiceLevel?: string; addOnIds: string[]; addOnNames: string[]; note?: string }
+  ) {
+    const key = cartKey(item.id, input.spiceLevel, input.addOnIds, input.note);
+    setCartEntries((prev) => {
+      const existing = prev.find((e) => e.key === key);
+      const max = maxQtyOf(item);
+      if (existing) {
+        return prev.map((e) =>
+          e.key === key ? { ...e, qty: Math.min(max, e.qty + input.qty) } : e
+        );
       }
+      const entry: CartEntry = {
+        key,
+        menuItemId: item.id,
+        name: item.name,
+        unitPrice: input.unitPrice,
+        qty: Math.min(max, input.qty),
+        spiceLevel: input.spiceLevel,
+        addOnIds: input.addOnIds,
+        addOnNames: input.addOnNames,
+        note: input.note,
+      };
+      return [...prev, entry];
     });
   }
 
-  const openTotal = order?.items.reduce((sum, i) => sum + i.price * i.qty, 0) ?? 0;
+  function updateCartQty(key: string, qty: number) {
+    setCartEntries((prev) => {
+      if (qty <= 0) return prev.filter((e) => e.key !== key);
+      const entry = prev.find((e) => e.key === key);
+      if (!entry) return prev;
+      const item = allItems.find((i) => i.id === entry.menuItemId);
+      const clamped = item ? Math.min(maxQtyOf(item), qty) : qty;
+      return prev.map((e) => (e.key === key ? { ...e, qty: clamped } : e));
+    });
+  }
+
+  function quickAdd(item: MenuItem) {
+    addToCart(item, { qty: 1, unitPrice: item.price, addOnIds: [], addOnNames: [] });
+  }
+  function quickRemove(item: MenuItem) {
+    const key = cartKey(item.id);
+    const current = cartEntries.find((e) => e.key === key)?.qty ?? 0;
+    updateCartQty(key, current - 1);
+  }
+  function plainQtyOf(item: MenuItem): number {
+    return cartEntries.find((e) => e.key === cartKey(item.id))?.qty ?? 0;
+  }
+
+  const cartCount = cartEntries.reduce((sum, e) => sum + e.qty, 0);
+  const cartTotal = cartEntries.reduce((sum, e) => sum + e.unitPrice * e.qty, 0);
+
+  async function handleSubmitOrder() {
+    return new Promise<{ unavailable: string[]; orderId: string | null }>((resolve) => {
+      startTransition(async () => {
+        const lines: CartLine[] = cartEntries.map((e) => ({
+          menuItemId: e.menuItemId,
+          qty: e.qty,
+          note: e.note,
+          spiceLevel: e.spiceLevel,
+          addOnIds: e.addOnIds,
+        }));
+        const result = await placeOrder(token, lines);
+        if (result.unavailable.length === 0) {
+          setCartEntries([]);
+          await refreshOrderNow();
+        }
+        resolve(result);
+      });
+    });
+  }
+
+  function handleNavSelect(tab: CustomerTab) {
+    if (tab === "home") {
+      scrollToGroup(ALL_GROUP_ID);
+    } else if (tab === "menu") {
+      const firstGroup = menuGroups[0];
+      if (firstGroup) scrollToGroup(firstGroup.id);
+      else scrollToGroup(ALL_GROUP_ID);
+    } else if (tab === "orders") {
+      setStatusOpen(true);
+    } else {
+      setContactOpen(true);
+    }
+  }
+
+  const currentStage = order && order.items.length > 0 ? currentOrderStage(order.items) : null;
+  const showBellDot = currentStage !== null && currentStage !== "served";
 
   return (
-    <div className="max-w-2xl mx-auto pb-32">
-      <header className="card rounded-none px-4 py-3.5 sticky top-0 z-10 flex items-baseline gap-2.5">
-        <h1 className="font-display font-medium text-2xl text-(--brand) leading-none">{tableName}</h1>
-        <p className="text-sm text-(--text-muted)">🍽️ สแกนเพื่อสั่งอาหาร</p>
+    <div className={`max-w-2xl mx-auto ${cartCount > 0 ? "pb-40" : "pb-24"}`}>
+      <header className="sticky top-0 z-20 bg-(--surface) border-b border-(--surface-border) px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="w-10 h-10 rounded-xl bg-(--brand) text-(--brand-foreground) flex items-center justify-center shrink-0">
+            <DishMarkIcon className="w-5 h-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-display font-semibold text-(--foreground) leading-tight truncate">บ้านอร่อย</p>
+            <p className="text-xs text-(--text-muted) leading-tight truncate">{tableName}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setStatusOpen(true)}
+          aria-label="สถานะออเดอร์"
+          className="relative w-10 h-10 rounded-full bg-(--surface-muted) flex items-center justify-center shrink-0"
+        >
+          <BellIcon className="w-5 h-5 text-(--foreground)" />
+          {showBellDot && (
+            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-(--cta) ring-2 ring-(--surface)" />
+          )}
+        </button>
       </header>
 
-      {/* Sticky category tabs — jump to a section, active tab tracks scroll
-          position. The defining GrabFood-style menu-navigation pattern. */}
-      {menuGroups.length > 1 && (
-        <div
-          ref={tabBarRef}
-          className="sticky top-[57px] z-10 bg-(--background)/95 backdrop-blur-sm border-b border-(--surface-border) px-4 py-2 flex gap-2 overflow-x-auto scrollbar-none"
-        >
+      <div className="px-4">
+        {!isSearching && (
+          <div className="flex items-center gap-3 py-5">
+            <div className="min-w-0">
+              <h1 className="page-heading">วันนี้อยากกินอะไรดี? 🍚</h1>
+              <p className="text-(--text-muted) mt-1">เลือกเมนูที่ชอบ แล้วสั่งได้เลย</p>
+            </div>
+            <SteamingBowlIllustration className="w-20 h-20 shrink-0" />
+          </div>
+        )}
+
+        <div className={`relative ${isSearching ? "py-4" : "pb-4"}`}>
+          <SearchIcon className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-(--text-muted-2)" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="ค้นหาเมนู..."
+            aria-label="ค้นหาเมนู"
+            className="w-full rounded-full border border-(--surface-border) bg-(--surface) pl-11 pr-4 py-3.5 text-base placeholder:text-(--text-muted-2) focus:outline-none focus:ring-2 focus:ring-(--brand)"
+          />
+        </div>
+      </div>
+
+      {!isSearching && menuGroups.length > 0 && (
+        <div className="sticky top-[65px] z-10 bg-(--background)/95 backdrop-blur-sm px-4 py-2.5 flex gap-2 overflow-x-auto scrollbar-none border-b border-(--surface-border)">
+          <button
+            ref={(el) => {
+              tabRefs.current[ALL_GROUP_ID] = el;
+            }}
+            onClick={() => scrollToGroup(ALL_GROUP_ID)}
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium border transition-colors ${
+              activeGroupId === ALL_GROUP_ID
+                ? "bg-(--brand) text-(--brand-foreground) border-(--brand)"
+                : "bg-(--surface) text-(--text-subtle) border-(--accent)/25"
+            }`}
+          >
+            ทั้งหมด
+          </button>
           {menuGroups.map((group) => (
             <button
               key={group.id}
@@ -185,10 +332,10 @@ export function OrderClient({
                 tabRefs.current[group.id] = el;
               }}
               onClick={() => scrollToGroup(group.id)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium border transition-colors ${
                 activeGroupId === group.id
-                  ? "bg-(--brand) text-(--brand-foreground)"
-                  : "bg-(--surface-muted) text-(--text-subtle)"
+                  ? "bg-(--brand) text-(--brand-foreground) border-(--brand)"
+                  : "bg-(--surface) text-(--text-subtle) border-(--accent)/25"
               }`}
             >
               {group.name}
@@ -197,130 +344,127 @@ export function OrderClient({
         </div>
       )}
 
-      {order && order.items.length > 0 && (
-        <section className="mx-4 mt-4 card bg-(--chip-bg) p-4">
-          <h2 className="font-semibold mb-2 text-(--chip-foreground)">ออเดอร์ของคุณ</h2>
-          <ul className="space-y-2 text-sm">
-            {order.items.map((item) => (
-              <li key={item.id} className="flex items-center justify-between gap-2">
-                <span>
-                  {item.name} <span className="text-(--text-muted)">x{item.qty}</span>
-                </span>
-                <span className={STATUS_CHIP[item.status] ?? "chip chip-neutral"}>
-                  {STATUS_LABEL[item.status] ?? item.status}
-                </span>
-              </li>
+      <main className="px-4 pt-5 space-y-8">
+        {isSearching ? (
+          searchResults.length === 0 ? (
+            <div className="text-center py-14 space-y-3">
+              <NoResultsDoodle className="w-24 h-24 mx-auto" />
+              <p className="text-(--text-muted-2)">ไม่พบเมนูที่ค้นหา</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {searchResults.map((item) => (
+                <FoodCard
+                  key={item.id}
+                  item={item}
+                  soldOut={isSoldOut(item)}
+                  plainQty={plainQtyOf(item)}
+                  onOpenDetail={() => setDetailItem(item)}
+                  onQuickAdd={() => quickAdd(item)}
+                  onQuickRemove={() => quickRemove(item)}
+                />
+              ))}
+            </div>
+          )
+        ) : menuGroups.length === 0 ? (
+          <div className="text-center py-14 space-y-3">
+            <EmptyPlateDoodle className="w-24 h-24 mx-auto" />
+            <p className="text-(--text-muted-2)">ตอนนี้ยังไม่มีเมนูให้สั่ง</p>
+          </div>
+        ) : (
+          <>
+            {featuredItems.length > 0 && (
+              <section>
+                <h2 className="section-title mb-3">เมนูแนะนำ</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {featuredItems.map((item) => (
+                    <FoodCard
+                      key={item.id}
+                      item={item}
+                      soldOut={isSoldOut(item)}
+                      plainQty={plainQtyOf(item)}
+                      onOpenDetail={() => setDetailItem(item)}
+                      onQuickAdd={() => quickAdd(item)}
+                      onQuickRemove={() => quickRemove(item)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {menuGroups.map((group) => (
+              <section
+                key={group.id}
+                ref={(el) => {
+                  sectionRefs.current[group.id] = el;
+                }}
+                className="scroll-mt-32"
+              >
+                <h2 className="section-title mb-3">
+                  {categoryEmoji(group.name)} {group.name}
+                </h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {group.items.map((item) => (
+                    <FoodCard
+                      key={item.id}
+                      item={item}
+                      soldOut={isSoldOut(item)}
+                      plainQty={plainQtyOf(item)}
+                      onOpenDetail={() => setDetailItem(item)}
+                      onQuickAdd={() => quickAdd(item)}
+                      onQuickRemove={() => quickRemove(item)}
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
-          </ul>
-          <p className="text-right font-semibold mt-3 pt-2 border-t border-(--surface-border)">
-            รวม {formatBaht(openTotal)} บาท
-          </p>
-        </section>
-      )}
-
-      {justSubmitted && (
-        <div className="mx-4 mt-4 p-3 rounded-lg bg-green-100 text-(--text-success) text-center text-sm font-medium">
-          🎉 ส่งออเดอร์แล้ว! ครัวกำลังเตรียมอาหารของคุณ
-        </div>
-      )}
-
-      {unavailable.length > 0 && (
-        <div className="mx-4 mt-4 p-3 rounded-lg bg-red-100 text-(--text-danger) text-center text-sm font-medium">
-          ขออภัย {unavailable.join(", ")} หมดพอดี รายการนี้ไม่ถูกเพิ่มในออเดอร์
-          (รายการอื่นในตะกร้าสั่งสำเร็จแล้ว)
-        </div>
-      )}
-
-      <main className="p-4 space-y-7">
-        {menuGroups.map((group) => (
-          <section
-            key={group.id}
-            ref={(el) => {
-              sectionRefs.current[group.id] = el;
-            }}
-            data-group-id={group.id}
-            className="scroll-mt-28"
-          >
-            <h2 className="font-display font-medium text-xl text-(--brand) mb-3">{group.name}</h2>
-            <ul className="space-y-3">
-              {group.items.map((item) => {
-                const soldOut = isSoldOut(item);
-                const qty = cart[item.id] ?? 0;
-                const atMax = item.trackStock && qty >= maxQtyOf(item);
-                return (
-                  <li
-                    key={item.id}
-                    className={`card p-3 flex items-center gap-3 transition-shadow ${
-                      qty > 0 ? "ring-2 ring-(--brand)" : ""
-                    } ${soldOut ? "opacity-50" : ""}`}
-                  >
-                    {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.imageUrl}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        width={64}
-                        height={64}
-                        className="w-16 h-16 rounded-lg object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-lg bg-(--surface-muted) flex items-center justify-center shrink-0 text-(--brand-soft)/40">
-                        <UtensilsIcon className="w-6 h-6" />
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">{item.name}</p>
-                      <p className="text-sm text-(--text-muted)">{formatBaht(item.price)} บาท</p>
-                      {soldOut && <p className="text-xs text-(--text-danger) font-medium">หมด</p>}
-                    </div>
-                    {!soldOut && (
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => setQty(item, qty - 1)}
-                          disabled={qty === 0}
-                          aria-label={`ลด ${item.name}`}
-                          className="w-10 h-10 rounded-full bg-(--surface-muted) font-bold text-lg disabled:opacity-40"
-                        >
-                          −
-                        </button>
-                        <span className="w-6 text-center font-medium tabular-nums">{qty}</span>
-                        <button
-                          onClick={() => setQty(item, qty + 1)}
-                          disabled={atMax}
-                          aria-label={`เพิ่ม ${item.name}`}
-                          className="w-10 h-10 rounded-full bg-(--brand) text-(--brand-foreground) font-bold text-lg disabled:opacity-40"
-                        >
-                          +
-                        </button>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ))}
-        {menuGroups.length === 0 && (
-          <p className="text-center text-(--text-muted-2)">ยังไม่มีเมนูให้สั่ง</p>
+          </>
         )}
       </main>
 
       {cartCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-20">
-          <div className="max-w-2xl mx-auto p-4">
+        <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-20 px-4">
+          <div className="max-w-2xl mx-auto">
             <button
-              onClick={handleSubmit}
-              disabled={isPending}
-              className="w-full bg-(--brand) text-(--brand-foreground) rounded-xl py-3.5 font-semibold flex justify-between px-5 shadow-[0_10px_30px_rgb(0_0_0_/_0.2)] disabled:opacity-50"
+              type="button"
+              onClick={() => setCartOpen(true)}
+              className="w-full bg-(--cta) text-white rounded-2xl py-3.5 px-5 font-semibold flex items-center justify-between shadow-[0_10px_30px_rgb(0_0_0_/_0.2)] active:scale-[0.98] transition-transform"
             >
-              <span>สั่งอาหาร ({cartCount})</span>
-              <span>{formatBaht(cartTotal)} บาท</span>
+              <span>🛒 {cartCount} รายการ</span>
+              <span className="flex items-center gap-1.5">
+                {formatBaht(cartTotal)} บาท
+                <span aria-hidden="true">→</span>
+              </span>
             </button>
           </div>
         </div>
       )}
+
+      <CustomerBottomNav active={null} onSelect={handleNavSelect} />
+
+      {detailItem && (
+        <FoodDetailSheet
+          key={detailItem.id}
+          item={detailItem}
+          maxQty={maxQtyOf(detailItem)}
+          onClose={() => setDetailItem(null)}
+          onAddToCart={(input) => addToCart(detailItem, input)}
+        />
+      )}
+
+      <CartFlowSheet
+        open={cartOpen}
+        entries={cartEntries}
+        tableName={tableName}
+        onClose={() => setCartOpen(false)}
+        onUpdateQty={updateCartQty}
+        onSubmit={handleSubmitOrder}
+        onViewStatus={() => setStatusOpen(true)}
+      />
+
+      <OrderStatusSheet open={statusOpen} order={order} onClose={() => setStatusOpen(false)} />
+
+      <ContactSheet open={contactOpen} tableName={tableName} onClose={() => setContactOpen(false)} />
     </div>
   );
 }

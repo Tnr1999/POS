@@ -19,9 +19,11 @@ type CategorySummary = { id: string; name: string; itemCount: number };
 type MenuItem = {
   id: string;
   name: string;
+  description: string | null;
   price: number;
   imageUrl: string | null;
   active: boolean;
+  isFeatured: boolean;
   trackStock: boolean;
   stock: number;
   categoryId: string | null;
@@ -248,6 +250,9 @@ function MenuItemCard({
         {!item.active && (
           <span className="absolute top-2 left-2 chip chip-neutral">ปิดขาย</span>
         )}
+        {item.active && item.isFeatured && (
+          <span className="absolute top-2 left-2 chip chip-gold">แนะนำ</span>
+        )}
       </MenuItemImage>
       <div className="p-3 flex-1 flex flex-col gap-1.5">
         <p className="card-title leading-snug line-clamp-2 min-h-[2.5em]">{item.name}</p>
@@ -314,6 +319,20 @@ function MenuItemForm({
         </label>
         <Input id="menu-item-name" name="name" defaultValue={item?.name} required />
       </div>
+      <div>
+        <label className="text-sm font-medium block mb-1" htmlFor="menu-item-description">
+          คำอธิบาย (ไม่บังคับ)
+        </label>
+        <textarea
+          id="menu-item-description"
+          name="description"
+          defaultValue={item?.description ?? ""}
+          rows={2}
+          maxLength={200}
+          placeholder="เช่น หมูกรอบกรุบ ๆ ผัดกับกะเพรา เสิร์ฟพร้อมไข่ดาว"
+          className="w-full rounded-lg border border-(--surface-border) bg-(--surface) px-3 py-2 placeholder:text-(--text-muted-2) focus:outline-none focus:ring-2 focus:ring-(--brand) resize-none"
+        />
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium block mb-1" htmlFor="menu-item-price">
@@ -363,6 +382,15 @@ function MenuItemForm({
           className="w-4 h-4"
         />
         ตัดสต็อกอัตโนมัติเมื่อขาย
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="isFeatured"
+          defaultChecked={item?.isFeatured ?? false}
+          className="w-4 h-4"
+        />
+        แนะนำเมนูนี้ (แสดงในหน้า &quot;เมนูแนะนำ&quot; ของลูกค้า)
       </label>
       <div>
         <label className="text-sm font-medium block mb-1" htmlFor="menu-item-stock">

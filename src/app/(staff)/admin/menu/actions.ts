@@ -31,15 +31,17 @@ export async function deleteCategory(categoryId: string) {
 export async function createMenuItem(formData: FormData) {
   await requireStaff();
   const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim() || null;
   const priceBaht = Number(formData.get("price"));
   const categoryId = String(formData.get("categoryId") ?? "") || null;
   const imageUrl = String(formData.get("imageUrl") ?? "").trim() || null;
   const trackStock = formData.get("trackStock") === "on";
+  const isFeatured = formData.get("isFeatured") === "on";
   const stock = Math.max(0, Math.trunc(Number(formData.get("stock")) || 0));
   if (!name || !Number.isFinite(priceBaht) || priceBaht < 0) return;
 
   await prisma.menuItem.create({
-    data: { name, price: toSatang(priceBaht), categoryId, imageUrl, trackStock, stock },
+    data: { name, description, price: toSatang(priceBaht), categoryId, imageUrl, trackStock, isFeatured, stock },
   });
   revalidatePath("/admin/menu");
   revalidatePath("/pos");
@@ -50,10 +52,12 @@ export async function updateMenuItem(formData: FormData) {
   await requireStaff();
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim() || null;
   const priceBaht = Number(formData.get("price"));
   const categoryId = String(formData.get("categoryId") ?? "") || null;
   const imageUrl = String(formData.get("imageUrl") ?? "").trim() || null;
   const trackStock = formData.get("trackStock") === "on";
+  const isFeatured = formData.get("isFeatured") === "on";
   const stock = Math.max(0, Math.trunc(Number(formData.get("stock")) || 0));
   if (!id || !name || !Number.isFinite(priceBaht) || priceBaht < 0) return;
 
@@ -63,7 +67,7 @@ export async function updateMenuItem(formData: FormData) {
 
     await tx.menuItem.update({
       where: { id },
-      data: { name, price: toSatang(priceBaht), categoryId, imageUrl, trackStock, stock },
+      data: { name, description, price: toSatang(priceBaht), categoryId, imageUrl, trackStock, isFeatured, stock },
     });
 
     const diff = stock - existing.stock;

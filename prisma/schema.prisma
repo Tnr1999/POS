@@ -20,9 +20,11 @@ model Category {
 model MenuItem {
   id             String          @id @default(cuid())
   name           String
+  description    String?
   price          Int
   imageUrl       String?
   active         Boolean         @default(true)
+  isFeatured     Boolean         @default(false)
   trackStock     Boolean         @default(false)
   stock          Int             @default(0)
   categoryId     String?
