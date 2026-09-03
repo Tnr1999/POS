@@ -1,11 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { formatBaht } from "@/lib/money";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { toast } from "@/components/Toast";
+import { Button } from "@/components/Button";
+import { Select } from "@/components/Select";
+import { Input } from "@/components/Input";
+import { Badge } from "@/components/Badge";
+import { EmptyState } from "@/components/EmptyState";
 
 const NEW_ORDER_HIGHLIGHT_MS = 15000;
 
@@ -154,13 +158,8 @@ export function PosBoard({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="page-title text-2xl font-bold">ออเดอร์ที่เปิดอยู่</h1>
-        <Link
-          href="/pos/new"
-          className="bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2.5 text-sm font-medium text-center"
-        >
-          + ออเดอร์ใหม่ (หน้าร้าน/กลับบ้าน)
-        </Link>
+        <h1 className="page-title">ออเดอร์ที่เปิดอยู่</h1>
+        <Button href="/pos/new">+ ออเดอร์ใหม่ (หน้าร้าน/กลับบ้าน)</Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -177,11 +176,7 @@ export function PosBoard({
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold flex items-center gap-2">
                   {order.tableName ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}
-                  {isNew && (
-                    <span className="chip chip-warning">
-                      ใหม่
-                    </span>
-                  )}
+                  {isNew && <Badge tone="warning">ใหม่</Badge>}
                 </h2>
                 <span className="text-xs text-(--text-muted-2)">
                   {new Date(order.createdAt).toLocaleTimeString("th-TH", {
@@ -235,13 +230,15 @@ export function PosBoard({
                   >
                     ยกเลิก
                   </ConfirmButton>
-                  <button
+                  <Button
+                    variant="cta"
+                    size="sm"
                     onClick={() => handlePay(order.id)}
                     disabled={isPending || order.items.length === 0}
-                    className="flex-1 bg-(--brand) text-(--brand-foreground) rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                    className="flex-1"
                   >
                     ชำระเงิน / พิมพ์บิล
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -250,7 +247,10 @@ export function PosBoard({
       </div>
 
       {orders.length === 0 && (
-        <p className="text-(--text-muted-2) text-center py-8">ยังไม่มีออเดอร์ที่เปิดอยู่</p>
+        <EmptyState
+          title="ยังไม่มีออเดอร์ที่เปิดอยู่"
+          description="ออเดอร์จากลูกค้าที่สแกน QR หรือที่พนักงานสร้างเองจะขึ้นที่นี่"
+        />
       )}
     </div>
   );
@@ -275,10 +275,10 @@ function AddItemPicker({
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
-      <select
+      <Select
         value={menuItemId}
         onChange={(e) => setMenuItemId(e.target.value)}
-        className="border rounded-lg px-2 py-2 flex-1 min-w-[140px]"
+        className="flex-1 min-w-[140px] py-2"
       >
         {menuItems.map((m) => (
           <option key={m.id} value={m.id}>
@@ -286,16 +286,18 @@ function AddItemPicker({
             {m.trackStock && m.stock <= 5 ? ` (เหลือ ${m.stock})` : ""}
           </option>
         ))}
-      </select>
-      <input
+      </Select>
+      <Input
         type="number"
         min={1}
         max={50}
         value={qty}
         onChange={(e) => setQty(Number(e.target.value))}
-        className="border rounded-lg px-2 py-2 w-16"
+        className="w-16 py-2"
       />
-      <button
+      <Button
+        variant="accent"
+        size="sm"
         disabled={isPending || !menuItemId}
         onClick={() =>
           startTransition(async () => {
@@ -308,10 +310,9 @@ function AddItemPicker({
             }
           })
         }
-        className="bg-(--accent) text-white rounded-lg px-4 py-2 disabled:opacity-50"
       >
         เพิ่ม
-      </button>
+      </Button>
     </div>
   );
 }
