@@ -58,7 +58,7 @@ export default async function TablesAdminPage() {
           {tablesWithQr.map((table) => (
             <div key={table.id} className="card p-4 space-y-3 text-center">
               <div className="flex items-center justify-between gap-2">
-                <h2 className="font-semibold">{table.name}</h2>
+                <h2 className="card-title">{table.name}</h2>
                 <Badge tone={table.hasOpenOrder ? "warning" : "success"}>
                   {table.hasOpenOrder ? "มีออเดอร์ค้าง" : "พร้อมใช้งาน"}
                 </Badge>

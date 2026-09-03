@@ -174,7 +174,7 @@ export function PosBoard({
               }`}
             >
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold flex items-center gap-2">
+                <h2 className="card-title flex items-center gap-2">
                   {order.tableName ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}
                   {isNew && <Badge tone="warning">ใหม่</Badge>}
                 </h2>

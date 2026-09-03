@@ -11,35 +11,41 @@ export default async function LoginPage({
   const { from, error } = await searchParams;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-(--background) px-4">
-      <div className="flex flex-col items-center gap-2">
+    <div className="min-h-screen flex flex-col bg-(--background)">
+      <div className="bg-(--brand) text-(--brand-foreground) flex flex-col items-center justify-center gap-3 py-14 sm:py-8 rounded-b-[32px] shadow-[0_10px_30px_rgb(0_0_0_/_0.15)]">
         <div
           aria-hidden
-          className="w-14 h-14 rounded-2xl bg-(--brand) text-(--brand-foreground) flex items-center justify-center shadow-[0_10px_30px_rgb(0_0_0_/_0.15)]"
+          className="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center"
         >
-          <DishMarkIcon className="w-7 h-7" />
+          <DishMarkIcon className="w-8 h-8" />
         </div>
-        <p className="font-display font-semibold text-lg text-(--foreground)">บ้านอร่อย</p>
+        <div className="text-center">
+          <p className="font-display font-semibold text-2xl">บ้านอร่อย</p>
+          <p className="text-sm text-white/75">ระบบจัดการร้าน</p>
+        </div>
       </div>
-      <form action={login} className="w-full max-w-sm card p-6 space-y-4">
-        <h1 className="text-xl font-bold text-center">เข้าสู่ระบบพนักงาน</h1>
-        <input type="hidden" name="from" value={from ?? "/pos"} />
 
-        {error && (
-          <p className="text-(--text-danger) text-sm text-center">
-            รหัสผ่านไม่ถูกต้อง
-          </p>
-        )}
+      <div className="flex-1 flex justify-center px-4 pb-10">
+        <form action={login} className="w-full max-w-sm h-fit card p-6 space-y-4 relative -mt-8">
+          <h1 className="section-title text-center">เข้าสู่ระบบพนักงาน</h1>
+          <input type="hidden" name="from" value={from ?? "/pos"} />
 
-        <div>
-          <label className="block text-sm font-medium mb-1">รหัสผ่าน</label>
-          <Input type="password" name="password" autoFocus required />
-        </div>
+          {error && (
+            <p className="text-(--text-danger) text-sm text-center">
+              รหัสผ่านไม่ถูกต้อง
+            </p>
+          )}
 
-        <Button type="submit" fullWidth>
-          เข้าสู่ระบบ
-        </Button>
-      </form>
+          <div>
+            <label className="block text-sm font-medium mb-1">รหัสผ่าน</label>
+            <Input type="password" name="password" autoFocus required />
+          </div>
+
+          <Button type="submit" fullWidth>
+            เข้าสู่ระบบ
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }

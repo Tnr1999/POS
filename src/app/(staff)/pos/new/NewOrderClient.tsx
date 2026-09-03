@@ -7,6 +7,7 @@ import { stockStatusOf } from "@/lib/stockStatus";
 import { Button } from "@/components/Button";
 import { SearchInput } from "@/components/SearchInput";
 import { EmptyState } from "@/components/EmptyState";
+import { MenuItemImage } from "@/components/MenuItemImage";
 
 type MenuItem = {
   id: string;
@@ -192,8 +193,10 @@ function CategoryButton({
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 text-left px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-        active ? "bg-(--brand) text-(--brand-foreground)" : "bg-(--surface) hover:bg-(--surface-muted)"
+      className={`shrink-0 text-left px-3.5 py-2 rounded-lg text-sm font-medium border transition-colors ${
+        active
+          ? "bg-(--brand) text-(--brand-foreground) border-(--brand)"
+          : "bg-(--surface) border-(--surface-border) hover:bg-(--surface-muted)"
       }`}
     >
       {children}
@@ -222,25 +225,15 @@ function MenuItemCard({
         qty > 0 ? "ring-2 ring-(--brand)" : ""
       } ${soldOut ? "opacity-50" : ""}`}
     >
-      <div className="aspect-square bg-(--surface-muted) relative">
-        {item.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.imageUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-cover"
-          />
-        )}
+      <MenuItemImage src={item.imageUrl}>
         {soldOut && (
           <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-sm font-semibold">
             หมด
           </span>
         )}
-      </div>
+      </MenuItemImage>
       <div className="p-2.5 flex-1 flex flex-col gap-1.5">
-        <p className="font-medium text-sm leading-snug line-clamp-2 min-h-[2.5em]">{item.name}</p>
+        <p className="card-title leading-snug line-clamp-2 min-h-[2.5em]">{item.name}</p>
         <div className="flex items-center justify-between gap-2 mt-auto">
           <span className="text-sm font-semibold text-(--foreground)">{formatBaht(item.price)}</span>
           {!soldOut &&

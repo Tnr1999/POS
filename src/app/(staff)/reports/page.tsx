@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { formatBaht } from "@/lib/money";
 import { EmptyState } from "@/components/EmptyState";
+import { StatCard } from "@/components/StatCard";
 import { ReportsFilterBar } from "./ReportsFilterBar";
 import { DailyRevenueChart } from "./DailyRevenueChart";
 
@@ -84,22 +85,26 @@ export default async function ReportsPage({
       <ReportsFilterBar from={toDateInputValue(fromDate)} to={toDateInputValue(toDate)} />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <div className="card p-4">
-          <p className="text-sm text-(--text-muted)">ยอดขายรวม</p>
-          <p className="text-xl sm:text-2xl font-bold text-(--brand-hover)">
-            {formatBaht(totalRevenue)} <span className="text-sm font-normal">บาท</span>
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-sm text-(--text-muted)">จำนวนบิล</p>
-          <p className="text-xl sm:text-2xl font-bold text-(--brand-hover)">{paidOrders.length}</p>
-        </div>
-        <div className="card p-4 col-span-2 sm:col-span-1">
-          <p className="text-sm text-(--text-muted)">ยอดเฉลี่ยต่อบิล</p>
-          <p className="text-xl sm:text-2xl font-bold text-(--brand-hover)">
-            {formatBaht(avgPerBill)} <span className="text-sm font-normal">บาท</span>
-          </p>
-        </div>
+        <StatCard
+          label="ยอดขายรวม"
+          tone="brand"
+          value={
+            <>
+              {formatBaht(totalRevenue)} <span className="text-sm font-normal">บาท</span>
+            </>
+          }
+        />
+        <StatCard label="จำนวนบิล" tone="brand" value={paidOrders.length} />
+        <StatCard
+          label="ยอดเฉลี่ยต่อบิล"
+          tone="brand"
+          className="col-span-2 sm:col-span-1"
+          value={
+            <>
+              {formatBaht(avgPerBill)} <span className="text-sm font-normal">บาท</span>
+            </>
+          }
+        />
       </div>
 
       <section className="card p-4 space-y-3">

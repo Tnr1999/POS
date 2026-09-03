@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { formatBaht } from "@/lib/money";
+import { UtensilsIcon } from "@/components/icons";
 import type { CartLine } from "./actions";
 
 type MenuItem = {
@@ -253,7 +254,7 @@ export function OrderClient({
                       qty > 0 ? "ring-2 ring-(--brand)" : ""
                     } ${soldOut ? "opacity-50" : ""}`}
                   >
-                    {item.imageUrl && (
+                    {item.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={item.imageUrl}
@@ -264,6 +265,10 @@ export function OrderClient({
                         height={64}
                         className="w-16 h-16 rounded-lg object-cover shrink-0"
                       />
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg bg-(--surface-muted) flex items-center justify-center shrink-0 text-(--brand-soft)/40">
+                        <UtensilsIcon className="w-6 h-6" />
+                      </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{item.name}</p>

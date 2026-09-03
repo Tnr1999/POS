@@ -180,6 +180,14 @@ button {
   font-weight: 600;
 }
 
+/* Card title — one consistent size/weight for every "name of the thing
+   this card represents" label (menu item, table, order), so a menu grid
+   and a table grid don't each invent their own heading style. */
+.card-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
 .scrollbar-none {
   scrollbar-width: none;
 }

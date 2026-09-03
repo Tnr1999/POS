@@ -12,6 +12,7 @@ import { Drawer } from "@/components/Drawer";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { StockStatusBadge } from "@/components/StatusBadge";
+import { MenuItemImage } from "@/components/MenuItemImage";
 import { EditIcon, TrashIcon, PlusIcon } from "@/components/icons";
 
 type CategorySummary = { id: string; name: string; itemCount: number };
@@ -150,30 +151,32 @@ export function MenuAdminClient({
           onChange={(e) => setQuery(e.target.value)}
           className="sm:flex-1"
         />
-        <Select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="sm:w-48"
-          aria-label="กรองตามหมวดหมู่"
-        >
-          <option value="all">ทุกหมวดหมู่</option>
-          <option value="none">ไม่มีหมวดหมู่</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
-        <Select
-          value={availability}
-          onChange={(e) => setAvailability(e.target.value)}
-          className="sm:w-40"
-          aria-label="กรองสถานะการขาย"
-        >
-          <option value="all">ทุกสถานะ</option>
-          <option value="active">เปิดขาย</option>
-          <option value="inactive">ปิดขาย</option>
-        </Select>
+        <div className="grid grid-cols-2 gap-2 sm:contents">
+          <Select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="sm:w-48"
+            aria-label="กรองตามหมวดหมู่"
+          >
+            <option value="all">ทุกหมวดหมู่</option>
+            <option value="none">ไม่มีหมวดหมู่</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+          <Select
+            value={availability}
+            onChange={(e) => setAvailability(e.target.value)}
+            className="sm:w-40"
+            aria-label="กรองสถานะการขาย"
+          >
+            <option value="all">ทุกสถานะ</option>
+            <option value="active">เปิดขาย</option>
+            <option value="inactive">ปิดขาย</option>
+          </Select>
+        </div>
       </div>
 
       {filteredItems.length === 0 ? (
@@ -241,23 +244,13 @@ function MenuItemCard({
 }) {
   return (
     <div className={`card overflow-hidden flex flex-col ${item.active ? "" : "opacity-60"}`}>
-      <div className="aspect-square bg-(--surface-muted) relative">
-        {item.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.imageUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-cover"
-          />
-        )}
+      <MenuItemImage src={item.imageUrl}>
         {!item.active && (
           <span className="absolute top-2 left-2 chip chip-neutral">ปิดขาย</span>
         )}
-      </div>
+      </MenuItemImage>
       <div className="p-3 flex-1 flex flex-col gap-1.5">
-        <p className="font-medium text-sm leading-snug line-clamp-2 min-h-[2.5em]">{item.name}</p>
+        <p className="card-title leading-snug line-clamp-2 min-h-[2.5em]">{item.name}</p>
         {item.categoryName && (
           <span className="text-xs text-(--text-muted-2)">{item.categoryName}</span>
         )}

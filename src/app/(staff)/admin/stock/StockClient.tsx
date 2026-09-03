@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/Toast";
@@ -8,6 +7,7 @@ import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { Modal } from "@/components/Modal";
 import { EmptyState } from "@/components/EmptyState";
+import { StatCard } from "@/components/StatCard";
 import { StockStatusBadge } from "@/components/StatusBadge";
 import { stockStatusOf } from "@/lib/stockStatus";
 import { EditIcon } from "@/components/icons";
@@ -69,26 +69,17 @@ export function StockClient({
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h1 className="page-title">คลังสินค้า / สต็อก</h1>
-        <Link href="/admin/menu" className="text-sm text-(--text-muted) hover:underline shrink-0">
+        <Button href="/admin/menu" variant="ghost" size="sm" className="shrink-0">
           จัดการเมนู →
-        </Link>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="card p-4">
-          <p className="text-sm text-(--text-muted)">วัตถุดิบทั้งหมด</p>
-          <p className="text-2xl font-bold">{stats.total}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-sm text-(--text-muted)">ใกล้หมด</p>
-          <p className="text-2xl font-bold text-(--text-warning)">{stats.low}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-sm text-(--text-muted)">หมดแล้ว</p>
-          <p className="text-2xl font-bold text-(--text-danger)">{stats.out}</p>
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <StatCard label="วัตถุดิบทั้งหมด" value={stats.total} className="col-span-2 sm:col-span-1" />
+        <StatCard label="ใกล้หมด" value={stats.low} tone="warning" />
+        <StatCard label="หมดแล้ว" value={stats.out} tone="danger" />
       </div>
 
       <section className="card p-4 space-y-3">
