@@ -52,7 +52,7 @@ export function Drawer({
               type="button"
               onClick={onClose}
               aria-label="ปิด"
-              className="shrink-0 w-9 h-9 min-h-0 flex items-center justify-center rounded-full hover:bg-(--surface-muted) text-(--text-muted)"
+              className="shrink-0 w-11 h-11 min-h-0 flex items-center justify-center rounded-full hover:bg-(--surface-muted) text-(--text-muted)"
             >
               <CloseIcon className="w-5 h-5" />
             </button>

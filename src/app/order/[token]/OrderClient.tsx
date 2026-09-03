@@ -218,13 +218,13 @@ export function OrderClient({
       )}
 
       {justSubmitted && (
-        <div className="mx-4 mt-4 p-3 rounded-lg bg-green-100 text-green-700 text-center text-sm font-medium">
+        <div className="mx-4 mt-4 p-3 rounded-lg bg-green-100 text-(--text-success) text-center text-sm font-medium">
           🎉 ส่งออเดอร์แล้ว! ครัวกำลังเตรียมอาหารของคุณ
         </div>
       )}
 
       {unavailable.length > 0 && (
-        <div className="mx-4 mt-4 p-3 rounded-lg bg-red-100 text-red-700 text-center text-sm font-medium">
+        <div className="mx-4 mt-4 p-3 rounded-lg bg-red-100 text-(--text-danger) text-center text-sm font-medium">
           ขออภัย {unavailable.join(", ")} หมดพอดี รายการนี้ไม่ถูกเพิ่มในออเดอร์
           (รายการอื่นในตะกร้าสั่งสำเร็จแล้ว)
         </div>
@@ -268,7 +268,7 @@ export function OrderClient({
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{item.name}</p>
                       <p className="text-sm text-(--text-muted)">{formatBaht(item.price)} บาท</p>
-                      {soldOut && <p className="text-xs text-red-600 font-medium">หมด</p>}
+                      {soldOut && <p className="text-xs text-(--text-danger) font-medium">หมด</p>}
                     </div>
                     {!soldOut && (
                       <div className="flex items-center gap-2 shrink-0">

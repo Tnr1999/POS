@@ -248,7 +248,7 @@ function MenuItemCard({
               <button
                 onClick={onIncrement}
                 aria-label={`เพิ่ม ${item.name}`}
-                className="w-8 h-8 min-h-0 rounded-full bg-(--brand) text-(--brand-foreground) flex items-center justify-center font-bold text-lg leading-none"
+                className="w-11 h-11 min-h-0 rounded-full bg-(--brand) text-(--brand-foreground) flex items-center justify-center font-bold text-lg leading-none"
               >
                 +
               </button>
@@ -257,7 +257,7 @@ function MenuItemCard({
                 <button
                   onClick={onDecrement}
                   aria-label={`ลด ${item.name}`}
-                  className="w-8 h-8 min-h-0 rounded-full bg-(--surface-muted) flex items-center justify-center font-bold leading-none"
+                  className="w-11 h-11 min-h-0 rounded-full bg-(--surface-muted) flex items-center justify-center font-bold leading-none"
                 >
                   −
                 </button>
@@ -266,7 +266,7 @@ function MenuItemCard({
                   onClick={onIncrement}
                   disabled={atMax}
                   aria-label={`เพิ่ม ${item.name}`}
-                  className="w-8 h-8 min-h-0 rounded-full bg-(--brand) text-(--brand-foreground) flex items-center justify-center font-bold leading-none disabled:opacity-40"
+                  className="w-11 h-11 min-h-0 rounded-full bg-(--brand) text-(--brand-foreground) flex items-center justify-center font-bold leading-none disabled:opacity-40"
                 >
                   +
                 </button>
