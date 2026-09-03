@@ -7,46 +7,74 @@
  * Tailwind v4's CSS-variable shorthand, e.g. `bg-(--surface)`,
  * `text-(--text-muted)`, instead of hardcoding `bg-white`/`text-gray-500`.
  *
- * Always light/cream — no dark mode. (Tried it; feedback was "don't like
- * the black background at all", so the app now ignores the OS/browser
- * theme setting entirely and always renders these values.)
+ * "Thai restaurant notebook" palette — warm olive + terracotta + gold on a
+ * cream paper ground. No dark mode (tried previously, explicitly reverted
+ * per feedback — `viewport.colorScheme = "light"` in layout.tsx).
  *
- * `bg-white`/`text-white` are left alone on purpose: they're used as
- * literal white (button text on a dark button, the printed receipt paper),
- * not "the current surface color".
+ * Two accents split the "primary action" role rather than one flat brand
+ * color: `--brand` (olive) is the default primary for most staff actions
+ * (บันทึก, เพิ่ม, เข้าสู่ระบบ); `--cta` (terracotta) is reserved for the one or
+ * two highest-stakes actions per screen — "สั่งอาหาร" (place order) and
+ * "ชำระเงิน" (take payment). Don't let `--cta` creep onto ordinary buttons or
+ * it stops meaning "the important one."
+ *
+ * Contrast note: the brief's raw swatches for primary-olive (#879653),
+ * muted-orange, and gold all fail 4.5:1 with white text on top, so they're
+ * kept as `--brand-soft`/`--gold` for icons, tints, and dark-text pairings
+ * only — every *-foreground pairing below was checked against both
+ * --background and --surface and clears 4.5:1 (WCAG AA body text).
  */
 :root {
-  /* warm cream, not cool gray — a little more "cozy corner shop", a little
-     less "SaaS dashboard" (per feedback: keep it playful/friendly) */
-  --background: #faf3e6; /* page background */
-  --foreground: #111827; /* page text */
-  --surface: #ffffff; /* card / header / modal background */
-  --surface-muted: #f5ecdc; /* soft accents: qty steppers, hover states */
-  --surface-border: #ece0cc; /* borders on top of --surface */
-  --text-muted: #6b7280; /* secondary text (was text-gray-500) */
-  --text-muted-2: #757575; /* tertiary/placeholder text — 4.6:1 on white, meets the same 4.5:1 floor as body text */
-  --text-subtle: #374151; /* slightly dimmed body text (was text-gray-600/700) */
-  --accent: #1f2937; /* secondary dark button ("print", "add", "save") */
-  --accent-hover: #111827;
-  /* Terracotta Ember — the one brand accent. Every primary action + the
-     customer-facing brand mark. See DESIGN.md "The One Ember Rule". */
-  --brand: #c1440e;
+  --background: #f8f3e8; /* page background — warm cream paper */
+  --foreground: #252525; /* page text */
+  --surface: #fffdf7; /* card / header / modal background — near-white paper */
+  --surface-muted: #f1e6d2; /* soft accents: qty steppers, hover states */
+  --surface-border: #e4d8bf; /* borders on top of --surface */
+  --text-muted: #6b6255; /* secondary text — warm gray, not cool gray */
+  --text-muted-2: #756a5b; /* tertiary/placeholder text — 4.78:1 on bg, 5.2:1 on surface */
+  --text-subtle: #4a4038; /* slightly dimmed body text */
+
+  /* Primary: olive. --brand is the button-fill shade (darker, so white text
+     stays ≥4.5:1); --brand-soft is the lighter swatch from the brief, for
+     icons/decorative fills/unselected-tab backgrounds where it's never
+     paired with white text on top of it. */
+  --brand: #68773d;
   --brand-foreground: #ffffff;
-  --brand-hover: #8f3009;
-  /* status pill background for "new"/highlight chips only */
-  --chip-bg: #fdece3;
-  --chip-foreground: #8f3009;
-  /* semantic text colors — plain Tailwind green-600/amber-600/red-600 fail
-     4.5:1 on white/cream in several spots (checked during QA pass). */
-  --text-success: #15803d; /* green-700 — 5.0:1 on white, 4.5:1 on cream */
-  --text-warning: #b45309; /* amber-700 — 5.0:1 on white, 4.6:1 on cream */
-  --text-danger: #b91c1c; /* red-700 — 6.5:1 on white, 5.9:1 on cream */
+  --brand-hover: #556132;
+  --brand-soft: #879653;
+
+  /* Secondary/ghost: warm brown — "print", "add", "save", one step down
+     from whichever accent is primary on that screen. */
+  --accent: #654a2e;
+  --accent-foreground: #ffffff;
+  --accent-hover: #523c25;
+
+  /* CTA: terracotta — reserved for the highest-stakes action per screen
+     only (see note above). */
+  --cta: #c84f12;
+  --cta-foreground: #ffffff;
+  --cta-hover: #a4400e;
+
+  /* Gold: decorative accent only (badges like "ขายดี"/"แนะนำ", small
+     highlights) — always paired with dark text, never white-on-gold. */
+  --gold: #d9a43a;
+  --gold-foreground: #252525;
+
+  /* status pill background for "new"/highlight chips (terracotta tint) */
+  --chip-bg: #f8e9e2;
+  --chip-foreground: #963b0d;
+
+  /* semantic text colors — darkened from the brief's raw swatches so plain
+     text usage (not a tinted chip background) still clears 4.5:1. */
+  --text-success: #596e37; /* from success #708A45 */
+  --text-warning: #835f20; /* from warning #D49A35 */
+  --text-danger: #b44234; /* from danger #C94A3A */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-anuphan);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-kanit);
 }
@@ -54,7 +82,12 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Explicit, not just the `font-sans` utility: the previous body rule here
+     hardcoded `Arial, Helvetica, sans-serif` and was never overridden by a
+     `font-sans` class anywhere, which meant next/font's Geist Sans variable
+     was silently never applied to text at all (moot for Thai anyway — Geist
+     ships no Thai subset). Anuphan is the real body font now. */
+  font-family: var(--font-sans), sans-serif;
 }
 
 /* Keep form fields at 16px so mobile Safari doesn't auto-zoom on focus,
@@ -83,7 +116,7 @@ button {
 }
 
 /* Status pill — "ใหม่", "จ่ายแล้ว" etc. The only place a tinted terracotta
-   background is allowed outside the primary button. */
+   background is allowed outside the CTA button. */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -97,13 +130,23 @@ button {
 }
 
 .chip-success {
-  background: rgba(22, 163, 74, 0.15);
-  color: #0f7a37; /* 4.65:1 on its own tinted bg — plain green-600 (#16a34a) was only 2.8:1 */
+  background: rgba(112, 138, 69, 0.18);
+  color: var(--text-success);
 }
 
 .chip-warning {
-  background: rgba(217, 119, 6, 0.15);
+  background: rgba(212, 154, 53, 0.2);
   color: var(--text-warning);
+}
+
+.chip-danger {
+  background: rgba(201, 74, 58, 0.15);
+  color: var(--text-danger);
+}
+
+.chip-gold {
+  background: rgba(217, 164, 58, 0.22);
+  color: var(--accent);
 }
 
 .chip-neutral {
@@ -112,22 +155,29 @@ button {
 }
 
 /* Small brand-colored accent bar in front of every page title — the one
-   piece of "this is the same app" visual glue tying the plain/functional
-   staff screens to the customer-facing terracotta identity, without
-   switching type (staff screens stay in Geist Sans; see the Two-Places
-   Rule for the display face). */
+   piece of "this is the same app" visual glue tying every staff screen to
+   the restaurant identity, without switching type (staff screens stay in
+   Anuphan; Kanit is reserved for the customer page — see DESIGN.md "The
+   Two-Places Rule"). */
 .page-title {
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
 }
 .page-title::before {
   content: "";
   width: 4px;
-  height: 1.4em;
+  height: 1.1em;
   flex-shrink: 0;
-  background: var(--brand);
+  background: var(--cta);
   border-radius: 2px;
+}
+
+.section-title {
+  font-size: clamp(1.125rem, 2.5vw, 1.375rem);
+  font-weight: 600;
 }
 
 .scrollbar-none {

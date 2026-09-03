@@ -1,11 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Kanit } from "next/font/google";
+import { Anuphan, Geist_Mono, Kanit } from "next/font/google";
 import { Toaster } from "@/components/Toast";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+// Body font, Thai-first — see DESIGN.md. Geist Sans (the previous body
+// font) ships no Thai subset at all, so every Thai string on staff screens
+// was silently falling back through the browser's default sans-serif this
+// whole time; Anuphan actually covers Thai + Latin.
+const anuphan = Anuphan({
+  variable: "--font-anuphan",
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin", "thai"],
 });
 
 const geistMono = Geist_Mono({
@@ -24,7 +29,7 @@ const kanit = Kanit({
 });
 
 export const metadata: Metadata = {
-  title: "ร้านค้า POS",
+  title: "บ้านอร่อย POS",
   description: "ระบบขายหน้าร้าน + สั่งอาหารผ่าน QR code",
 };
 
@@ -38,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="th"
-      className={`${geistSans.variable} ${geistMono.variable} ${kanit.variable} h-full antialiased`}
+      className={`${anuphan.variable} ${geistMono.variable} ${kanit.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}
