@@ -10,6 +10,8 @@ import { Select } from "@/components/Select";
 import { Input } from "@/components/Input";
 import { Badge } from "@/components/Badge";
 import { EmptyState } from "@/components/EmptyState";
+import { CheckoutModal } from "./CheckoutModal";
+import type { PayOrderOptions } from "./actions";
 
 const NEW_ORDER_HIGHLIGHT_MS = 15000;
 
@@ -111,13 +113,15 @@ export function PosBoard({
   menuItems: MenuItem[];
   advanceOrderItemStatus: (orderItemId: string) => Promise<void>;
   addItemToOrder: (orderId: string, menuItemId: string, qty: number) => Promise<void>;
-  payOrder: (orderId: string) => Promise<void>;
+  payOrder: (orderId: string, options?: PayOrderOptions) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [isPending, startTransition] = useTransition();
+  const [checkoutOrderId, setCheckoutOrderId] = useState<string | null>(null);
   const router = useRouter();
   const newOrderIds = useNewOrderAlert(orders);
+  const checkoutOrder = orders.find((o) => o.id === checkoutOrderId) ?? null;
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -144,15 +148,9 @@ export function PosBoard({
     });
   }
 
-  function handlePay(orderId: string) {
-    startTransition(async () => {
-      try {
-        await payOrder(orderId);
-        router.push(`/receipt/${orderId}`);
-      } catch (err) {
-        toast(err instanceof Error ? err.message : "ชำระเงินไม่สำเร็จ", "error");
-      }
-    });
+  function handlePaid(orderId: string) {
+    setCheckoutOrderId(null);
+    router.push(`/receipt/${orderId}`);
   }
 
   return (
@@ -228,7 +226,7 @@ export function PosBoard({
                   <Button
                     variant="cta"
                     size="sm"
-                    onClick={() => handlePay(order.id)}
+                    onClick={() => setCheckoutOrderId(order.id)}
                     disabled={isPending || order.items.length === 0}
                     className="flex-1"
                   >
@@ -247,6 +245,15 @@ export function PosBoard({
           description="ออเดอร์จากลูกค้าที่สแกน QR หรือที่พนักงานสร้างเองจะขึ้นที่นี่"
         />
       )}
+
+      <CheckoutModal
+        key={checkoutOrderId ?? "closed"}
+        open={checkoutOrderId !== null}
+        order={checkoutOrder}
+        payOrder={payOrder}
+        onClose={() => setCheckoutOrderId(null)}
+        onPaid={handlePaid}
+      />
     </div>
   );
 }

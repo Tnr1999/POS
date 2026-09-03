@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { formatBaht } from "@/lib/money";
+import { resolveOrderTotals } from "@/lib/orderTotals";
 import { EmptyState } from "@/components/EmptyState";
 import { StatCard } from "@/components/StatCard";
 import { ReportsFilterBar } from "./ReportsFilterBar";
@@ -59,10 +60,12 @@ async function ReportsData({ fromDate, toDate }: { fromDate: Date; toDate: Date 
     include: { table: true, items: true },
   });
 
-  const totalRevenue = paidOrders.reduce(
-    (sum, order) => sum + order.items.reduce((s, i) => s + i.price * i.qty, 0),
-    0
-  );
+  // Revenue is grandTotalAmount (what was actually charged) for orders with
+  // a payment snapshot, falling back to the item sum for orders paid before
+  // the snapshot existed — never paidAmount, which can exceed the sale for
+  // a CASH payment with change owed.
+  const orderTotals = new Map(paidOrders.map((order) => [order.id, resolveOrderTotals(order)]));
+  const totalRevenue = paidOrders.reduce((sum, order) => sum + orderTotals.get(order.id)!.grandTotalAmount, 0);
   const avgPerBill = paidOrders.length > 0 ? Math.round(totalRevenue / paidOrders.length) : 0;
 
   const itemTotals = new Map<string, { qty: number; revenue: number }>();
@@ -86,7 +89,7 @@ async function ReportsData({ fromDate, toDate }: { fromDate: Date; toDate: Date 
           const dayEnd = endOfDay(dayStart);
           const revenue = paidOrders
             .filter((o) => o.paidAt && o.paidAt >= dayStart && o.paidAt <= dayEnd)
-            .reduce((s, o) => s + o.items.reduce((s2, i) => s2 + i.price * i.qty, 0), 0);
+            .reduce((s, o) => s + orderTotals.get(o.id)!.grandTotalAmount, 0);
           return {
             label: dayStart.toLocaleDateString("th-TH", { day: "numeric", month: "short" }),
             revenue,
@@ -165,7 +168,7 @@ async function ReportsData({ fromDate, toDate }: { fromDate: Date; toDate: Date 
         ) : (
           <ul className="divide-y divide-(--surface-border) text-sm">
             {paidOrders.map((order) => {
-              const total = order.items.reduce((s, i) => s + i.price * i.qty, 0);
+              const total = orderTotals.get(order.id)!.grandTotalAmount;
               const shortId = order.id.slice(-6).toUpperCase();
               return (
                 <li key={order.id} className="py-2.5 flex items-center justify-between gap-3">
