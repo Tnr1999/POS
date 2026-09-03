@@ -187,9 +187,12 @@ button {
   display: none;
 }
 
-.no-print {
-  display: block;
-}
+/* Intentionally no default rule here — `.no-print` only means something
+   inside the print media query below. A `display: block` default here
+   used to win the cascade over any other display utility (e.g. `flex`,
+   `sm:hidden`) applied to the same element, since same-specificity CSS
+   falls back to source order, not intent — it doesn't understand "unless
+   printing." That silently broke BottomNavigation's `sm:hidden`. */
 
 @media print {
   .no-print {
