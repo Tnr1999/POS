@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { formatBaht } from "@/lib/money";
 import { EmptyState } from "@/components/EmptyState";
 import { StatCard } from "@/components/StatCard";
 import { ReportsFilterBar } from "./ReportsFilterBar";
+import { ReportsSkeleton } from "./ReportsSkeleton";
 import { DailyRevenueChart } from "./DailyRevenueChart";
 
 const MAX_CHART_DAYS = 62;
@@ -34,6 +36,20 @@ export default async function ReportsPage({
   const fromDate = from ? startOfDay(new Date(from)) : startOfDay(today);
   const toDate = to ? endOfDay(new Date(to)) : endOfDay(today);
 
+  return (
+    <div className="max-w-4xl mx-auto space-y-5">
+      <h1 className="page-title">รายงานยอดขาย</h1>
+
+      <ReportsFilterBar from={toDateInputValue(fromDate)} to={toDateInputValue(toDate)} />
+
+      <Suspense key={`${fromDate.getTime()}-${toDate.getTime()}`} fallback={<ReportsSkeleton />}>
+        <ReportsData fromDate={fromDate} toDate={toDate} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ReportsData({ fromDate, toDate }: { fromDate: Date; toDate: Date }) {
   const paidOrders = await prisma.order.findMany({
     where: {
       status: "PAID",
@@ -79,11 +95,7 @@ export default async function ReportsPage({
       : null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5">
-      <h1 className="page-title">รายงานยอดขาย</h1>
-
-      <ReportsFilterBar from={toDateInputValue(fromDate)} to={toDateInputValue(toDate)} />
-
+    <div className="space-y-5">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <StatCard
           label="ยอดขายรวม"

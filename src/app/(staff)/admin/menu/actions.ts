@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireStaff } from "@/lib/session";
 import { toSatang } from "@/lib/money";
@@ -11,7 +11,9 @@ export async function createCategory(formData: FormData) {
   if (!name) return;
 
   await prisma.category.create({ data: { name } });
+  updateTag("categories");
   revalidatePath("/admin/menu");
+  revalidatePath("/pos/new");
 }
 
 export async function deleteCategory(categoryId: string) {
@@ -21,7 +23,9 @@ export async function deleteCategory(categoryId: string) {
     data: { categoryId: null },
   });
   await prisma.category.delete({ where: { id: categoryId } });
+  updateTag("categories");
   revalidatePath("/admin/menu");
+  revalidatePath("/pos/new");
 }
 
 export async function createMenuItem(formData: FormData) {
@@ -39,6 +43,7 @@ export async function createMenuItem(formData: FormData) {
   });
   revalidatePath("/admin/menu");
   revalidatePath("/pos");
+  revalidatePath("/pos/new");
 }
 
 export async function updateMenuItem(formData: FormData) {
@@ -71,6 +76,7 @@ export async function updateMenuItem(formData: FormData) {
   revalidatePath("/admin/menu");
   revalidatePath("/admin/stock");
   revalidatePath("/pos");
+  revalidatePath("/pos/new");
 }
 
 export async function toggleMenuItemActive(id: string, active: boolean) {
@@ -78,6 +84,7 @@ export async function toggleMenuItemActive(id: string, active: boolean) {
   await prisma.menuItem.update({ where: { id }, data: { active } });
   revalidatePath("/admin/menu");
   revalidatePath("/pos");
+  revalidatePath("/pos/new");
 }
 
 export async function deleteMenuItem(id: string) {
@@ -85,4 +92,5 @@ export async function deleteMenuItem(id: string) {
   await prisma.menuItem.delete({ where: { id } });
   revalidatePath("/admin/menu");
   revalidatePath("/pos");
+  revalidatePath("/pos/new");
 }

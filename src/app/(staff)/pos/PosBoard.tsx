@@ -157,11 +157,6 @@ export function PosBoard({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="page-title">ออเดอร์ที่เปิดอยู่</h1>
-        <Button href="/pos/new">+ ออเดอร์ใหม่ (หน้าร้าน/กลับบ้าน)</Button>
-      </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {orders.map((order) => {
           const total = order.items.reduce((sum, i) => sum + i.price * i.qty, 0);

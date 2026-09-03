@@ -1,5 +1,5 @@
 import QRCode from "qrcode";
-import { prisma } from "@/lib/prisma";
+import { getTables } from "@/lib/tables";
 import { PrintButton } from "@/components/PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ function getBaseUrl() {
 }
 
 export default async function PrintTablesPage() {
-  const tables = await prisma.table.findMany({ orderBy: { createdAt: "asc" } });
+  const tables = await getTables();
   const baseUrl = getBaseUrl();
 
   const tablesWithQr = await Promise.all(
