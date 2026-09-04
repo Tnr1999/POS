@@ -238,3 +238,22 @@ button {
     color: #000000;
   }
 }
+
+/* PRODUCT.md promises "prefers-reduced-motion-friendly animation" for the
+   whole app; this is what actually delivers it. Every animation in this
+   codebase is plain CSS (Tailwind `transition-*`/`animate-[...]` utilities,
+   plus the customer bottom sheet's inline @keyframes) — collapsing
+   durations/iterations here covers all of it globally, without hunting
+   down and conditionally disabling each one at the component level.
+   `scroll-behavior: auto` also stops the menu page's category-tap smooth
+   scroll from motion-sicking someone who asked for less movement. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

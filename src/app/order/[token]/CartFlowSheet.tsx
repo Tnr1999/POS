@@ -29,14 +29,23 @@ export function CartFlowSheet({
   const [unavailable, setUnavailable] = useState<string[]>([]);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState(false);
+  // Snapshot of count/subtotal taken the instant the user confirms — the
+  // confirm/sending/success screens read from this, never live `entries`.
+  // Without it, the parent clears the cart (setCartEntries([])) the moment
+  // placeOrder succeeds, which is *before* this sheet's own step flips to
+  // "success" — so the "กำลังส่ง..." screen would flash "0 รายการ / ฿0" for a
+  // frame as the now-empty cart prop re-renders through it.
+  const [snapshot, setSnapshot] = useState<{ count: number; subtotal: number } | null>(null);
   // One key per "ส่งออเดอร์" submission attempt (reused across retries of the
   // same attempt, cleared when the user goes back to edit the cart) so a
   // network retry or double-tap can't create duplicate order items — see
   // placeOrder's doc comment in actions.ts.
   const idempotencyKeyRef = useRef<string | null>(null);
 
-  const count = entries.reduce((sum, e) => sum + e.qty, 0);
-  const subtotal = entries.reduce((sum, e) => sum + e.unitPrice * e.qty, 0);
+  const liveCount = entries.reduce((sum, e) => sum + e.qty, 0);
+  const liveSubtotal = entries.reduce((sum, e) => sum + e.unitPrice * e.qty, 0);
+  const count = snapshot?.count ?? liveCount;
+  const subtotal = snapshot?.subtotal ?? liveSubtotal;
 
   function handleClose() {
     onClose();
@@ -45,6 +54,7 @@ export function CartFlowSheet({
       setStep("cart");
       setUnavailable([]);
       setSubmitError(false);
+      setSnapshot(null);
       idempotencyKeyRef.current = null;
     }, 200);
   }
@@ -62,6 +72,7 @@ export function CartFlowSheet({
       if (result.unavailable.length > 0) {
         setUnavailable(result.unavailable);
         idempotencyKeyRef.current = null;
+        setSnapshot(null);
         setStep("cart");
         return;
       }
@@ -110,7 +121,7 @@ export function CartFlowSheet({
                       type="button"
                       onClick={() => onUpdateQty(entry.key, entry.qty - 1)}
                       aria-label={`ลด ${entry.name}`}
-                      className="w-9 h-9 rounded-full bg-(--surface-muted) font-bold leading-none"
+                      className="w-11 h-11 rounded-full bg-(--surface-muted) font-bold leading-none"
                     >
                       −
                     </button>
@@ -119,7 +130,7 @@ export function CartFlowSheet({
                       type="button"
                       onClick={() => onUpdateQty(entry.key, entry.qty + 1)}
                       aria-label={`เพิ่ม ${entry.name}`}
-                      className="w-9 h-9 rounded-full bg-(--brand) text-(--brand-foreground) font-bold leading-none"
+                      className="w-11 h-11 rounded-full bg-(--brand) text-(--brand-foreground) font-bold leading-none"
                     >
                       +
                     </button>
@@ -139,6 +150,7 @@ export function CartFlowSheet({
                 type="button"
                 onClick={() => {
                   idempotencyKeyRef.current = null;
+                  setSnapshot({ count: liveCount, subtotal: liveSubtotal });
                   setStep("confirm");
                 }}
                 className="w-full bg-(--cta) text-white rounded-2xl py-4 font-semibold active:scale-[0.98] transition-transform"
@@ -168,7 +180,10 @@ export function CartFlowSheet({
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => setStep("cart")}
+              onClick={() => {
+                setSnapshot(null);
+                setStep("cart");
+              }}
               disabled={step === "sending"}
               className="flex-1 bg-(--surface-muted) text-(--foreground) rounded-2xl py-3.5 font-medium disabled:opacity-50"
             >

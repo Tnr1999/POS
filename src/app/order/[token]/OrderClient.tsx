@@ -9,19 +9,28 @@ import { CartFlowSheet } from "./CartFlowSheet";
 import { OrderStatusSheet } from "./OrderStatusSheet";
 import { ContactSheet } from "./ContactSheet";
 import { CustomerBottomNav, type CustomerTab } from "./CustomerBottomNav";
-import { SteamingBowlIllustration, EmptyPlateDoodle, NoResultsDoodle } from "./illustrations";
+import {
+  SteamingBowlIllustration,
+  EmptyPlateDoodle,
+  NoResultsDoodle,
+  RiceCategoryIcon,
+  NoodleCategoryIcon,
+  DrinkCategoryIcon,
+  DessertCategoryIcon,
+  SnackCategoryIcon,
+} from "./illustrations";
 import { currentOrderStage } from "@/lib/orderProgress";
 import type { CartLine } from "./actions";
 import type { CartEntry, MenuGroup, MenuItem, OpenOrderState } from "./types";
 
 const ALL_GROUP_ID = "__all__";
 
-function categoryEmoji(name: string): string {
-  if (name.includes("เครื่องดื่ม")) return "🥤";
-  if (name.includes("ของหวาน")) return "🍰";
-  if (name.includes("เส้น")) return "🍜";
-  if (name.includes("ทานเล่น")) return "🍢";
-  return "🍚";
+function CategoryIcon({ name, className }: { name: string; className?: string }) {
+  if (name.includes("เครื่องดื่ม")) return <DrinkCategoryIcon className={className} />;
+  if (name.includes("ของหวาน")) return <DessertCategoryIcon className={className} />;
+  if (name.includes("เส้น")) return <NoodleCategoryIcon className={className} />;
+  if (name.includes("ทานเล่น")) return <SnackCategoryIcon className={className} />;
+  return <RiceCategoryIcon className={className} />;
 }
 
 function cartKey(menuItemId: string, spiceLevel?: string, addOnIds: string[] = [], note?: string): string {
@@ -404,8 +413,9 @@ export function OrderClient({
                 }}
                 className="scroll-mt-32"
               >
-                <h2 className="section-title mb-3">
-                  {categoryEmoji(group.name)} {group.name}
+                <h2 className="section-title mb-3 flex items-center gap-2">
+                  <CategoryIcon name={group.name} className="w-5 h-5 text-(--brand) shrink-0" />
+                  {group.name}
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   {group.items.map((item) => (

@@ -95,6 +95,60 @@ export function CelebrationBurst({ className }: IllustrationProps) {
   );
 }
 
+// Small category-heading marks (24x24, currentColor line-art matching the
+// order-stage icons below) — replace raw emoji next to each menu section
+// title, keeping every visual mark in this app an original inline SVG
+// rather than relying on the OS's emoji font for a piece of UI chrome.
+export function RiceCategoryIcon({ className }: IllustrationProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M4 12h16a8 6 0 0 1-8 6 8 6 0 0 1-8-6Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M3 12c0-1 .5-1.6 1.5-1.8M20.5 10.2c1 .2 1.5.8 1.5 1.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function NoodleCategoryIcon({ className }: IllustrationProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M4 11h16a8 6 0 0 1-8 6 8 6 0 0 1-8-6Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M8 11c.5-2 .5-3.5-.5-5M12 11c.5-2.4.5-4-1-6M16 11c.5-2 .5-3.5-.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function DrinkCategoryIcon({ className }: IllustrationProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M5 8h14M14 8V5.5A1.5 1.5 0 0 0 12.5 4h-1A1.5 1.5 0 0 0 10 5.5V8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M9.5 11.5v6M14.5 11.5v6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  );
+}
+
+export function DessertCategoryIcon({ className }: IllustrationProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M5 10a7 7 0 0 1 14 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M4 10h16v1.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M12 3v2.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="2.4" r="0.9" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function SnackCategoryIcon({ className }: IllustrationProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M5 19 18 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="9.5" cy="8.5" r="1.6" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="13" cy="12" r="1.6" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="16.5" cy="15.5" r="1.6" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
 export function ReceivedIcon({ className }: IllustrationProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">

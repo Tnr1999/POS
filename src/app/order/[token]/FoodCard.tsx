@@ -79,14 +79,14 @@ export function FoodCard({
             type="button"
             onClick={handleQuickAdd}
             aria-label={`เพิ่ม ${item.name}`}
-            className={`w-9 h-9 rounded-full bg-(--cta) text-white flex items-center justify-center text-xl font-bold leading-none shrink-0 transition-transform ${
+            className={`w-11 h-11 rounded-full bg-(--cta) text-white flex items-center justify-center text-xl font-bold leading-none shrink-0 transition-transform ${
               justAdded ? "scale-90" : "scale-100"
             }`}
           >
             +
           </button>
         ) : (
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={(e) => {
@@ -94,16 +94,16 @@ export function FoodCard({
                 onQuickRemove();
               }}
               aria-label={`ลด ${item.name}`}
-              className="w-8 h-8 rounded-full bg-(--surface-muted) flex items-center justify-center font-bold leading-none"
+              className="w-11 h-11 rounded-full bg-(--surface-muted) flex items-center justify-center font-bold leading-none shrink-0"
             >
               −
             </button>
-            <span className="w-4 text-center text-sm font-semibold tabular-nums">{plainQty}</span>
+            <span className="w-4 text-center text-sm font-semibold tabular-nums shrink-0">{plainQty}</span>
             <button
               type="button"
               onClick={handleQuickAdd}
               aria-label={`เพิ่ม ${item.name}`}
-              className={`w-8 h-8 rounded-full bg-(--cta) text-white flex items-center justify-center font-bold leading-none transition-transform ${
+              className={`w-11 h-11 rounded-full bg-(--cta) text-white flex items-center justify-center font-bold leading-none shrink-0 transition-transform ${
                 justAdded ? "scale-90" : "scale-100"
               }`}
             >
