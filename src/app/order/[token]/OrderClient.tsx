@@ -68,6 +68,18 @@ export function OrderClient({
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
+  // Guards against out-of-order responses between the two independent call
+  // sites that both hit `/api/public/tables/${token}` — the 5s interval
+  // poll below and refreshOrderNow() (fired right after a successful
+  // submit). Without this, an earlier-dispatched request's response can
+  // arrive after a later one's and overwrite fresher state with stale data
+  // (e.g. a slow poll tick landing right after a submission would revert
+  // the just-placed order back to "no order"). Both call sites share this
+  // one ref — incremented immediately before each dispatches its fetch —
+  // so whichever response comes back is only applied if it's still the
+  // most recently dispatched one by the time it arrives.
+  const pollSeqRef = useRef(0);
+
   const allItems = useMemo(() => menuGroups.flatMap((g) => g.items), [menuGroups]);
   const featuredItems = useMemo(() => allItems.filter((i) => i.isFeatured), [allItems]);
 
@@ -75,10 +87,13 @@ export function OrderClient({
   // original implementation, just relocated into the redesigned component.
   useEffect(() => {
     async function refresh() {
+      const seq = ++pollSeqRef.current;
       try {
         const res = await fetch(`/api/public/tables/${token}`, { cache: "no-store" });
+        if (seq !== pollSeqRef.current) return; // superseded by a later request — discard
         if (!res.ok) return;
         const data = await res.json();
+        if (seq !== pollSeqRef.current) return; // superseded while awaiting res.json()
         setOrder(data.order);
         if (data.stock) setStockLevels(data.stock);
       } catch {
@@ -93,10 +108,13 @@ export function OrderClient({
    *  successful submit so "ดูสถานะออเดอร์" doesn't show stale/empty status
    *  while waiting for the next 5s poll tick. */
   async function refreshOrderNow() {
+    const seq = ++pollSeqRef.current;
     try {
       const res = await fetch(`/api/public/tables/${token}`, { cache: "no-store" });
+      if (seq !== pollSeqRef.current) return; // superseded by a later request — discard
       if (!res.ok) return;
       const data = await res.json();
+      if (seq !== pollSeqRef.current) return; // superseded while awaiting res.json()
       setOrder(data.order);
       if (data.stock) setStockLevels(data.stock);
     } catch {
