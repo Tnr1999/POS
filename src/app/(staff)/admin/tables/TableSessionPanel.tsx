@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { Badge } from "@/components/Badge";
 import { Modal } from "@/components/Modal";
 import { toast } from "@/components/Toast";
+import { formatBaht } from "@/lib/money";
 import {
   createIdempotencyKeyHolder,
   createSingleFlightRunner,
@@ -93,14 +94,20 @@ export function TableSessionPanel({
     }
   }
 
-  if (viewState === "HAS_OPEN_ORDER") {
+  if (viewState === "HAS_OPEN_ORDER" && activeSession) {
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm text-(--text-muted)">Session</span>
           <Badge tone="warning">มีออเดอร์ค้าง</Badge>
         </div>
-        <p className="text-xs text-(--text-muted-2)">มีออเดอร์ค้างอยู่ ไม่สามารถปิดหรือเปิดรอบใหม่ได้</p>
+        <p className="font-semibold">{formatBaht(activeSession.openOrderTotal)} บาท</p>
+        <p className="text-xs text-(--text-muted-2)">
+          ต้องชำระเงินหรือยกเลิกออเดอร์ก่อน จึงจะปิดหรือเปิดรอบใหม่ได้
+        </p>
+        <Button href="/pos" variant="ghost" size="sm" fullWidth>
+          ไปที่หน้าออเดอร์ →
+        </Button>
       </div>
     );
   }

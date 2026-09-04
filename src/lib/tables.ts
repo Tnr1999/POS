@@ -25,6 +25,8 @@ export type ActiveSessionInfo = {
   status: string;
   startedAt: Date;
   hasOpenOrder: boolean;
+  /** Satang total of the OPEN order's live (non-CANCELLED) items — 0 when hasOpenOrder is false. */
+  openOrderTotal: number;
 };
 
 export type TableWithSession = {
@@ -49,7 +51,11 @@ export async function getTablesWithSessions(): Promise<TableWithSession[]> {
         where: { status: "ACTIVE" },
         take: 1,
         include: {
-          orders: { where: { status: "OPEN" }, take: 1, select: { id: true } },
+          orders: {
+            where: { status: "OPEN" },
+            take: 1,
+            select: { id: true, items: { select: { price: true, qty: true, status: true } } },
+          },
         },
       },
     },
@@ -57,6 +63,7 @@ export async function getTablesWithSessions(): Promise<TableWithSession[]> {
 
   return tables.map((table) => {
     const session = table.sessions[0];
+    const openOrder = session?.orders[0];
     return {
       id: table.id,
       name: table.name,
@@ -67,7 +74,12 @@ export async function getTablesWithSessions(): Promise<TableWithSession[]> {
             token: session.token,
             status: session.status,
             startedAt: session.startedAt,
-            hasOpenOrder: session.orders.length > 0,
+            hasOpenOrder: openOrder !== undefined,
+            openOrderTotal: openOrder
+              ? openOrder.items
+                  .filter((item) => item.status !== "CANCELLED")
+                  .reduce((sum, item) => sum + item.price * item.qty, 0)
+              : 0,
           }
         : null,
     };

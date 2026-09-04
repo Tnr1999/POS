@@ -101,6 +101,14 @@ const NEXT_STATUS_LABEL: Record<string, string> = {
   PREPARING: "เสิร์ฟแล้ว",
 };
 
+/** True once every item on the order has been served — the order needs no
+ *  more kitchen action and is just waiting to be paid, distinct from an
+ *  order still being cooked. Derived entirely from OrderItem.status (already
+ *  fetched for the item list below), not a new state. */
+function isReadyForPayment(items: OrderItem[]): boolean {
+  return items.length > 0 && items.every((i) => i.status === "SERVED");
+}
+
 export function PosBoard({
   initialOrders,
   menuItems,
@@ -159,6 +167,7 @@ export function PosBoard({
         {orders.map((order) => {
           const total = order.items.reduce((sum, i) => sum + i.price * i.qty, 0);
           const isNew = newOrderIds.has(order.id);
+          const readyForPayment = isReadyForPayment(order.items);
           return (
             <div
               key={order.id}
@@ -170,6 +179,7 @@ export function PosBoard({
                 <h2 className="card-title flex items-center gap-2">
                   {order.tableName ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}
                   {isNew && <Badge tone="warning">ใหม่</Badge>}
+                  {!isNew && readyForPayment && <Badge tone="success">พร้อมเก็บเงิน</Badge>}
                 </h2>
                 <span className="text-xs text-(--text-muted-2)">
                   {new Date(order.createdAt).toLocaleTimeString("th-TH", {
