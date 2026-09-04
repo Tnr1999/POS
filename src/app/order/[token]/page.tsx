@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { supportsCustomization } from "@/lib/menuOptions";
+import { resolveActiveSessionByToken } from "@/lib/tableSessionAccess";
 import { OrderClient } from "./OrderClient";
 import { placeOrder } from "./actions";
 
@@ -11,8 +12,14 @@ export default async function OrderPage({
 }) {
   const { token } = await params;
 
-  const table = await prisma.table.findUnique({ where: { token } });
-  if (!table) notFound();
+  // Phase 2D.4: `token` is a TableSession token, not a Table token — it
+  // only grants access while that session is ACTIVE. An unknown token, a
+  // CLOSED session's old token, and "the table has a different ACTIVE
+  // session now" all land here identically as `null`, which renders the
+  // same generic expired/unavailable state (not-found.tsx) — never a
+  // fallback to the table's current session.
+  const access = await resolveActiveSessionByToken(token);
+  if (!access) notFound();
 
   const categories = await prisma.category.findMany({
     orderBy: { sortOrder: "asc" },
@@ -51,14 +58,14 @@ export default async function OrderPage({
   ].filter((g) => g.items.length > 0);
 
   const order = await prisma.order.findFirst({
-    where: { tableId: table.id, status: "OPEN" },
+    where: { tableSessionId: access.sessionId, status: "OPEN" },
     include: { items: { orderBy: { createdAt: "asc" } } },
   });
 
   return (
     <OrderClient
       token={token}
-      tableName={table.name}
+      tableName={access.tableName}
       menuGroups={menuGroups}
       initialOrder={
         order

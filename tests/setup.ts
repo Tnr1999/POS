@@ -7,6 +7,10 @@ import { vi } from "vitest";
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
   updateTag: vi.fn(),
+  // unstable_cache has no request-scoped storage to hook into outside a real
+  // Next.js server — pass the wrapped function straight through so callers
+  // (e.g. src/lib/tables.ts's getTables) still run their real logic.
+  unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
 }));
 
 vi.mock("next/headers", () => ({

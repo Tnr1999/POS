@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { resolveActiveSessionByToken } from "@/lib/tableSessionAccess";
 
 export async function GET(
   _request: Request,
@@ -7,14 +8,18 @@ export async function GET(
 ) {
   const { token } = await params;
 
-  const table = await prisma.table.findUnique({ where: { token } });
-  if (!table) {
+  // Phase 2D.4: same session-token resolution as the order page — an old
+  // token whose session has since closed must keep returning not_found even
+  // if the same physical table now has a different ACTIVE session; there is
+  // deliberately no lookup-by-table fallback here.
+  const access = await resolveActiveSessionByToken(token);
+  if (!access) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
   const [order, trackedItems] = await Promise.all([
     prisma.order.findFirst({
-      where: { tableId: table.id, status: "OPEN" },
+      where: { tableSessionId: access.sessionId, status: "OPEN" },
       include: { items: { orderBy: { createdAt: "asc" } } },
     }),
     prisma.menuItem.findMany({

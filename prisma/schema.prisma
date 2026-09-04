@@ -50,25 +50,92 @@ model StockMovement {
 }
 
 model Table {
-  id        String   @id @default(cuid())
+  id        String         @id @default(cuid())
   name      String
-  token     String   @unique
+  // Legacy per-table QR identity (still required/unique). As of Phase 2D.4,
+  // superseded for customer ordering by TableSession.token, which is scoped
+  // to one occupancy round instead of the table's entire lifetime — see
+  // TableSession below and src/lib/tableSessionAccess.ts. placeOrder, the
+  // customer order page, and the polling API no longer resolve against this
+  // field at all (no fallback). It remains only for /admin/tables/print's
+  // static per-table QR sheet and as the row identity createTable/
+  // regenerateTableToken manage; a printed sheet using this token will show
+  // customers the expired/unavailable page unless/until a future phase
+  // redesigns the print flow around session tokens.
+  token     String         @unique
   orders    Order[]
-  createdAt DateTime @default(now())
+  sessions  TableSession[]
+  createdAt DateTime       @default(now())
+}
+
+// status: ACTIVE | CLOSED
+//
+// One occupancy round for a Table: from when staff opens the table for a
+// new customer group (Phase 2D.2, not yet implemented) until that round
+// ends. TableSession.token is the QR identity for that round — a fresh
+// token per session, valid only while status = "ACTIVE" (enforced by
+// server actions added in Phase 2D.2, not by anything in this schema
+// alone). This is what lets an old session's QR stop working the moment a
+// new one starts, without touching Table.token at all.
+//
+// Invariant: at most one ACTIVE TableSession per Table. Prisma's schema
+// language has no declarative support for a partial/conditional unique
+// index (a plain `@@unique([tableId])` would forbid more than one CLOSED
+// session per table too, which is wrong - a table accumulates many closed
+// sessions over its lifetime). The real constraint is a Postgres partial
+// unique index added by hand in this migration's SQL:
+//   CREATE UNIQUE INDEX ... ON "TableSession"("tableId") WHERE status = 'ACTIVE'
+// This is a last-resort safety net, not the primary defense - the actual
+// serialization (so two concurrent "open a new session" calls can't even
+// reach a constraint violation) is a Table row lock added in Phase 2D.2,
+// following the same SELECT ... FOR UPDATE pattern already proven in
+// placeOrder/cancelOrder/addItemToOrder/payOrder.
+model TableSession {
+  id        String    @id @default(cuid())
+  tableId   String
+  table     Table     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  status    String    @default("ACTIVE")
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  orders    Order[]
+
+  // Set only by openTableSession (Phase 2D.2), one value per logical "open
+  // this table for a new round" request from the caller — lets a retried
+  // request (network timeout, the client retrying) detect that this exact
+  // request already succeeded and return the session it created, instead
+  // of treating the resulting "ACTIVE session, no OPEN order" state as a
+  // brand-new "start another round" request. Same idempotency-key pattern
+  // as OrderItem.idempotencyKey (Phase 1). Null for every session created
+  // before this field existed, and never backfilled.
+  idempotencyKey String? @unique
+
+  @@index([tableId])
+  @@index([status])
 }
 
 // status: OPEN | PAID | CANCELLED
 // type: DINE_IN | TAKEAWAY
 model Order {
-  id        String      @id @default(cuid())
-  tableId   String?
-  table     Table?      @relation(fields: [tableId], references: [id], onDelete: SetNull)
-  type      String      @default("DINE_IN")
-  status    String      @default("OPEN")
-  note      String?
-  items     OrderItem[]
-  createdAt DateTime    @default(now())
-  paidAt    DateTime?
+  id             String        @id @default(cuid())
+  tableId        String?
+  table          Table?        @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  // Which TableSession (occupancy round) this order was created in. Set
+  // once at creation and never changed afterward (Phase 2D.2+ - this
+  // column exists now, but nothing writes it yet, matching how
+  // idempotencyKey and the payment-snapshot columns were each added a
+  // phase ahead of the code that populates them). Null for every order
+  // that predates TableSession existing, and for TAKEAWAY/walk-in orders
+  // that were never tied to a table QR at all - never backfilled or
+  // guessed for either case.
+  tableSessionId String?
+  tableSession   TableSession? @relation(fields: [tableSessionId], references: [id], onDelete: SetNull)
+  type           String        @default("DINE_IN")
+  status         String        @default("OPEN")
+  note           String?
+  items          OrderItem[]
+  createdAt      DateTime      @default(now())
+  paidAt         DateTime?
 
   // Frozen checkout snapshot, set once by payOrder when the order transitions
   // OPEN -> PAID and never touched again afterward (a retried/duplicated
@@ -103,6 +170,7 @@ model Order {
 
   @@index([tableId])
   @@index([status])
+  @@index([tableSessionId])
 }
 
 // status: PENDING | PREPARING | SERVED | CANCELLED

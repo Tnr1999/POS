@@ -1,5 +1,5 @@
 import QRCode from "qrcode";
-import { getTables } from "@/lib/tables";
+import { currentOrderTokenFor, getTablesWithSessions } from "@/lib/tables";
 import { PrintButton } from "@/components/PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -9,13 +9,21 @@ function getBaseUrl() {
 }
 
 export default async function PrintTablesPage() {
-  const tables = await getTables();
+  // Phase 2D.4: a printed QR must encode the table's current ACTIVE
+  // TableSession token, exactly like the live QR on /admin/tables — never
+  // the legacy Table.token, which no longer grants order access at all (see
+  // currentOrderTokenFor's doc comment). getTablesWithSessions() already
+  // fetches every table's session state in one query (no N+1); a table with
+  // no ACTIVE session simply gets no QR here, rendered as a "ยังไม่ได้เปิดรอบ"
+  // placeholder below instead of a QR nobody can use.
+  const tables = await getTablesWithSessions();
   const baseUrl = getBaseUrl();
 
   const tablesWithQr = await Promise.all(
     tables.map(async (table) => {
-      const orderUrl = `${baseUrl}/order/${table.token}`;
-      const qrDataUrl = await QRCode.toDataURL(orderUrl, { margin: 1, width: 320 });
+      const sessionToken = currentOrderTokenFor(table);
+      const orderUrl = sessionToken ? `${baseUrl}/order/${sessionToken}` : null;
+      const qrDataUrl = orderUrl ? await QRCode.toDataURL(orderUrl, { margin: 1, width: 320 }) : null;
       return { ...table, orderUrl, qrDataUrl };
     })
   );
@@ -36,9 +44,15 @@ export default async function PrintTablesPage() {
             className="border border-black/20 rounded-xl p-6 text-center break-inside-avoid"
           >
             <h2 className="text-xl font-bold mb-2">{table.name}</h2>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={table.qrDataUrl} alt={table.name} className="mx-auto" />
-            <p className="mt-2 text-sm">สแกนเพื่อสั่งอาหาร</p>
+            {table.qrDataUrl ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={table.qrDataUrl} alt={table.name} className="mx-auto" />
+                <p className="mt-2 text-sm">สแกนเพื่อสั่งอาหาร</p>
+              </>
+            ) : (
+              <p className="py-10 text-sm text-black/60">ยังไม่ได้เปิดรอบ — เปิดโต๊ะก่อนจึงจะพิมพ์ QR ได้</p>
+            )}
           </div>
         ))}
       </div>

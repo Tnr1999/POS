@@ -1,15 +1,14 @@
 import { Suspense } from "react";
 import QRCode from "qrcode";
-import { prisma } from "@/lib/prisma";
-import { getTables } from "@/lib/tables";
+import { currentOrderTokenFor, getTablesWithSessions } from "@/lib/tables";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
-import { Badge } from "@/components/Badge";
 import { EmptyState } from "@/components/EmptyState";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { TablesSkeleton } from "./TablesSkeleton";
-import { createTable, deleteTable, regenerateTableToken } from "./actions";
+import { TableSessionPanel } from "./TableSessionPanel";
+import { createTable, deleteTable, regenerateTableToken, openTableSession, closeTableSession } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -42,25 +41,25 @@ export default function TablesAdminPage() {
 }
 
 async function TablesGrid() {
-  // Table identity (cached, rarely changes) and which tables currently have
-  // an open order (always fresh — this is live service state) are
-  // independent, so they run in parallel instead of the table list gating
-  // a second, dependent query for open orders.
-  const [tables, openOrders] = await Promise.all([
-    getTables(),
-    prisma.order.findMany({
-      where: { status: "OPEN", tableId: { not: null } },
-      select: { tableId: true },
-    }),
-  ]);
+  // Table identity + session state — session status is live service state
+  // (staff opening/closing rounds, customers placing orders), so this is
+  // deliberately uncached (see getTablesWithSessions's doc comment).
+  const tables = await getTablesWithSessions();
   const baseUrl = getBaseUrl();
-  const tablesWithOpenOrder = new Set(openOrders.map((o) => o.tableId));
 
+  // Phase 2D.4: the QR customers can actually order through must encode the
+  // current ACTIVE TableSession's token, not the permanent Table.token —
+  // an old session's QR (and Table.token itself) no longer works for
+  // ordering once that session closes. With no ACTIVE session yet, there is
+  // no working customer QR to show at all (rendered below as a prompt to
+  // open the table first), never a fallback to Table.token. Same derivation
+  // as /admin/tables/print (currentOrderTokenFor).
   const tablesWithQr = await Promise.all(
     tables.map(async (table) => {
-      const orderUrl = `${baseUrl}/order/${table.token}`;
-      const qrDataUrl = await QRCode.toDataURL(orderUrl, { margin: 1, width: 240 });
-      return { ...table, orderUrl, qrDataUrl, hasOpenOrder: tablesWithOpenOrder.has(table.id) };
+      const sessionToken = currentOrderTokenFor(table);
+      const orderUrl = sessionToken ? `${baseUrl}/order/${sessionToken}` : null;
+      const qrDataUrl = orderUrl ? await QRCode.toDataURL(orderUrl, { margin: 1, width: 240 }) : null;
+      return { ...table, orderUrl, qrDataUrl };
     })
   );
 
@@ -77,22 +76,32 @@ async function TablesGrid() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {tablesWithQr.map((table) => (
         <div key={table.id} className="card p-4 space-y-3 text-center">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="card-title">{table.name}</h2>
-            <Badge tone={table.hasOpenOrder ? "warning" : "success"}>
-              {table.hasOpenOrder ? "มีออเดอร์ค้าง" : "พร้อมใช้งาน"}
-            </Badge>
-          </div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={table.qrDataUrl}
-            alt={`QR code สั่งอาหารสำหรับ ${table.name}`}
-            className="mx-auto rounded-lg border border-(--surface-border)"
+          <h2 className="card-title">{table.name}</h2>
+
+          <TableSessionPanel
+            tableId={table.id}
+            tableName={table.name}
+            activeSession={table.activeSession}
+            openTableSession={openTableSession}
+            closeTableSession={closeTableSession}
           />
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-(--text-muted-2) break-all text-left">{table.orderUrl}</p>
-            <CopyLinkButton url={table.orderUrl} className="shrink-0" />
-          </div>
+
+          {table.qrDataUrl && table.orderUrl ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={table.qrDataUrl}
+                alt={`QR code สั่งอาหารสำหรับ ${table.name}`}
+                className="mx-auto rounded-lg border border-(--surface-border)"
+              />
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-(--text-muted-2) break-all text-left">{table.orderUrl}</p>
+                <CopyLinkButton url={table.orderUrl} className="shrink-0" />
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-(--text-muted-2) py-6">เปิดโต๊ะก่อน เพื่อสร้าง QR สำหรับลูกค้าสั่งอาหาร</p>
+          )}
           <div className="flex justify-center gap-4 text-sm pt-2 border-t border-(--surface-border)">
             <ConfirmButton
               action={async () => {
@@ -101,7 +110,7 @@ async function TablesGrid() {
               }}
               tone="warning"
               confirmTitle="สร้าง QR ใหม่"
-              confirmMessage={`QR เดิมของ "${table.name}" ที่พิมพ์ไว้จะใช้ไม่ได้ทันที ต้องพิมพ์แผ่นใหม่ไปแปะแทน — ยืนยัน?`}
+              confirmMessage={`QR ที่เคยพิมพ์ไว้สำหรับ "${table.name}" จะใช้ไม่ได้ทันที ต้องพิมพ์แผ่นใหม่ไปแปะแทน (ไม่กระทบ QR สั่งอาหารของรอบที่เปิดอยู่ตอนนี้) — ยืนยัน?`}
               confirmLabel="สร้าง QR ใหม่"
               className="text-(--text-warning) hover:underline"
             >

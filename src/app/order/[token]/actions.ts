@@ -15,16 +15,34 @@ export type CartLine = {
 export type PlaceOrderResult = { unavailable: string[]; orderId: string | null };
 
 /**
- * Places (or adds to) the open order for a table.
+ * Places (or adds to) the open order for a table's current occupancy round.
  *
- * Concurrency: two devices scanning the same table's QR and submitting at
- * the same instant used to be able to each create their own separate OPEN
- * Order (classic check-then-act race on the findFirst/create below). We now
- * take a row lock on the Table itself as the very first statement inside
- * the transaction — every concurrent placeOrder call for the same table
- * serializes behind it, so the second call's findFirst always sees the
- * first call's already-committed Order (or none, if this really is the
- * first request), never a half-finished one.
+ * Phase 2D.4 semantic change: `token` used to be a Table.token (permanent,
+ * one per table). It is now a TableSession.token (one per occupancy round —
+ * see prisma/schema.prisma's TableSession doc comment). This is the
+ * authoritative access boundary for customer ordering: a token only works
+ * while its session is ACTIVE. A closed session's token is dead forever —
+ * it never falls back to Table.token, never resolves to whatever session is
+ * ACTIVE on the table now, and is never silently remapped or reopened. The
+ * external signature is kept as `(token, cart, idempotencyKey?)` on purpose
+ * to avoid churn in OrderClient.tsx/CartFlowSheet.tsx, which only pass this
+ * value through without interpreting it.
+ *
+ * Concurrency: two devices scanning the same QR and submitting at the same
+ * instant used to be able to each create their own separate OPEN Order
+ * (classic check-then-act race on the findFirst/create below). We take a
+ * row lock on the Table itself — not just the TableSession — as the very
+ * first statement inside the transaction, the same primitive
+ * openTableSession/closeTableSession use, so a customer submitting at the
+ * exact moment staff closes this session (or opens a new one) always
+ * serializes against it instead of racing it. The session is re-read AFTER
+ * the lock is acquired and its ACTIVE-ness re-verified there; the token
+ * lookup done before the transaction only exists to learn which Table to
+ * lock next and is never trusted for anything past that point. Every
+ * concurrent placeOrder call for the same table then serializes behind the
+ * lock, so the second call's findFirst always sees the first call's
+ * already-committed Order (or none, if this really is the first request),
+ * never a half-finished one.
  *
  * Idempotency: `idempotencyKey` identifies one "ส่งออเดอร์" submission from
  * the client (see CartFlowSheet.tsx). Each cart line's row is tagged
@@ -35,17 +53,27 @@ export type PlaceOrderResult = { unavailable: string[]; orderId: string | null }
  * and sees the first attempt's rows already committed, so it skips
  * re-inserting them instead of duplicating the order. Lines that failed
  * (e.g. stock ran out) were never inserted, so a retry correctly reattempts
- * only those.
+ * only those. This is unaffected by the session becoming CLOSED between the
+ * original attempt and the retry: the retry re-resolves and re-verifies the
+ * session exactly like a first attempt would, so a session that closed in
+ * between now correctly rejects the retry too — an old idempotencyKey does
+ * not grant access to a session that has since closed.
  */
 export async function placeOrder(
   token: string,
   cart: CartLine[],
   idempotencyKey?: string
 ): Promise<PlaceOrderResult> {
-  const table = await prisma.table.findUnique({ where: { token } });
-  if (!table) {
-    throw new Error("ไม่พบโต๊ะนี้ กรุณาสแกน QR code ใหม่อีกครั้ง");
+  const EXPIRED_MESSAGE = "QR นี้หมดอายุแล้ว กรุณาสแกน QR ใหม่จากโต๊ะ";
+
+  // Pre-lock read: only used to learn which Table to lock next. Never
+  // trusted past that — the authoritative check happens again after the
+  // lock is held (see below).
+  const initialSession = await prisma.tableSession.findUnique({ where: { token } });
+  if (!initialSession) {
+    throw new Error(EXPIRED_MESSAGE);
   }
+  const tableId = initialSession.tableId;
 
   const lines = cart.filter((line) => Number.isInteger(line.qty) && line.qty > 0);
   if (lines.length === 0) return { unavailable: [], orderId: null };
@@ -60,15 +88,24 @@ export async function placeOrder(
 
   await prisma.$transaction(async (tx) => {
     // Row lock on the Table — see function doc comment. Must be the first
-    // statement in the transaction so it covers the find-or-create below.
-    await tx.$queryRaw`SELECT id FROM "Table" WHERE id = ${table.id} FOR UPDATE`;
+    // statement in the transaction so it covers everything below, including
+    // the session re-verification.
+    await tx.$queryRaw`SELECT id FROM "Table" WHERE id = ${tableId} FOR UPDATE`;
+
+    // Re-read and re-verify the session now that the lock is held: staff
+    // may have closed this session (or opened a new one) while we were
+    // waiting for the lock. Only this post-lock state counts.
+    const session = await tx.tableSession.findUnique({ where: { token } });
+    if (!session || session.tableId !== tableId || session.status !== "ACTIVE") {
+      throw new Error(EXPIRED_MESSAGE);
+    }
 
     let order = await tx.order.findFirst({
-      where: { tableId: table.id, status: "OPEN" },
+      where: { tableSessionId: session.id, status: "OPEN" },
     });
     if (!order) {
       order = await tx.order.create({
-        data: { tableId: table.id, type: "DINE_IN", status: "OPEN" },
+        data: { tableId, tableSessionId: session.id, type: "DINE_IN", status: "OPEN" },
       });
     }
     orderId = order.id;
