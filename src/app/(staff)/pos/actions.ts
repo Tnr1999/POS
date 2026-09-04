@@ -38,11 +38,25 @@ export async function advanceOrderItemStatus(orderItemId: string) {
   revalidatePath("/pos");
 }
 
-export async function addItemToOrder(orderId: string, menuItemId: string, qty: number) {
+/**
+ * Adds one line to an OPEN order. Returns `{ added: false }` — never throws
+ * — when the order is no longer OPEN by the time this runs (paid/cancelled
+ * concurrently from another device, or already gone): the caller has no
+ * other way to distinguish "actually added" from "safely rejected," since
+ * both look identical as a resolved promise otherwise. This mirrors the
+ * `{ orderId, unavailable }` result shape createWalkInOrder already uses for
+ * the same reason — a defined result object instead of throwing for an
+ * expected, recoverable outcome.
+ */
+export async function addItemToOrder(
+  orderId: string,
+  menuItemId: string,
+  qty: number
+): Promise<{ added: boolean }> {
   await requireStaff();
-  if (!Number.isInteger(qty) || qty <= 0) return;
+  if (!Number.isInteger(qty) || qty <= 0) return { added: false };
 
-  await prisma.$transaction(async (tx) => {
+  const added = await prisma.$transaction(async (tx) => {
     // Row lock on the Order — see cancelOrder's doc comment below. Must be
     // the first statement so the OPEN check right after it can't race with
     // a concurrent cancelOrder for the same order.
@@ -52,7 +66,7 @@ export async function addItemToOrder(orderId: string, menuItemId: string, qty: n
       tx.order.findUnique({ where: { id: orderId } }),
       tx.menuItem.findUnique({ where: { id: menuItemId } }),
     ]);
-    if (!order || order.status !== "OPEN" || !menuItem) return;
+    if (!order || order.status !== "OPEN" || !menuItem) return false;
 
     const boundedQty = Math.min(qty, 50);
     const ok = await consumeStock(tx, menuItem, boundedQty);
@@ -70,8 +84,11 @@ export async function addItemToOrder(orderId: string, menuItemId: string, qty: n
         status: "PENDING",
       },
     });
+    return true;
   });
+
   revalidatePath("/pos");
+  return { added };
 }
 
 export async function createWalkInOrder(

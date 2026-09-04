@@ -132,7 +132,7 @@ export function PosBoard({
   initialOrders: Order[];
   menuItems: MenuItem[];
   advanceOrderItemStatus: (orderItemId: string) => Promise<void>;
-  addItemToOrder: (orderId: string, menuItemId: string, qty: number) => Promise<void>;
+  addItemToOrder: (orderId: string, menuItemId: string, qty: number) => Promise<{ added: boolean }>;
   payOrder: (orderId: string, options?: PayOrderOptions) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
 }) {
@@ -379,7 +379,7 @@ function AddItemPicker({
 }: {
   orderId: string;
   menuItems: MenuItem[];
-  addItemToOrder: (orderId: string, menuItemId: string, qty: number) => Promise<void>;
+  addItemToOrder: (orderId: string, menuItemId: string, qty: number) => Promise<{ added: boolean }>;
   onAdded: () => void;
 }) {
   const [menuItemId, setMenuItemId] = useState(menuItems[0]?.id ?? "");
@@ -417,7 +417,11 @@ function AddItemPicker({
         onClick={() =>
           startTransition(async () => {
             try {
-              await addItemToOrder(orderId, menuItemId, qty);
+              const result = await addItemToOrder(orderId, menuItemId, qty);
+              if (!result.added) {
+                toast("ออเดอร์นี้ไม่สามารถเพิ่มรายการได้แล้ว อาจถูกชำระเงินหรือยกเลิกไปแล้วจากอุปกรณ์อื่น", "error");
+                return;
+              }
               setQty(1);
               onAdded();
             } catch (err) {

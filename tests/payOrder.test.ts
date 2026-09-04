@@ -193,7 +193,7 @@ describe("payOrder", () => {
 
   it("payOrder before addItemToOrder: the add is rejected and never reaches the paid order", async () => {
     await payOrder(orderId);
-    await expect(addItemToOrder(orderId, menuItemId, 1)).resolves.toBeUndefined(); // silent reject, matches existing addItemToOrder behavior for a non-OPEN order
+    await expect(addItemToOrder(orderId, menuItemId, 1)).resolves.toEqual({ added: false }); // rejected, not thrown, for a non-OPEN order — the caller can tell it didn't happen
 
     const order = await prisma.order.findUniqueOrThrow({ where: { id: orderId }, include: { items: true } });
     expect(order.items).toHaveLength(1); // no new item landed on the PAID order
