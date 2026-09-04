@@ -17,7 +17,24 @@ export async function advanceOrderItemStatus(orderItemId: string) {
   const next = ITEM_STATUS_ORDER[currentIndex + 1];
   if (!next) return;
 
-  await prisma.orderItem.update({ where: { id: orderItemId }, data: { status: next } });
+  // Atomic conditional update (same guard pattern as cancelOrder/payOrder in
+  // this file): only applies if the row's status is still exactly what was
+  // just read above. Without this, two concurrent calls starting from the
+  // same status both compute the same `next` from the same stale read and
+  // both write it — silently losing one of the two intended transitions
+  // (e.g. two concurrent advances from PENDING both landing on PREPARING
+  // instead of one of them reaching SERVED). Whichever call's UPDATE
+  // commits first wins; the other's WHERE clause no longer matches (the
+  // status has already moved on) and it safely no-ops instead of
+  // overwriting — exactly like a retried/duplicated request, never an
+  // error, since the caller has no way to tell "lost the race" apart from
+  // "someone else already did this" and neither needs surfacing to staff.
+  const result = await prisma.orderItem.updateMany({
+    where: { id: orderItemId, status: item.status },
+    data: { status: next },
+  });
+  if (result.count === 0) return;
+
   revalidatePath("/pos");
 }
 
