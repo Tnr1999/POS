@@ -8,6 +8,7 @@ import { Button } from "@/components/Button";
 import { SearchInput } from "@/components/SearchInput";
 import { EmptyState } from "@/components/EmptyState";
 import { MenuItemImage } from "@/components/MenuItemImage";
+import { toast } from "@/components/Toast";
 
 type MenuItem = {
   id: string;
@@ -74,11 +75,15 @@ export function NewOrderClient({
     if (lines.length === 0) return;
     setError(null);
     startTransition(async () => {
-      const result = await createWalkInOrder(type, lines);
-      if (result.unavailable.length > 0) {
-        setError(`${result.unavailable.join(", ")} มีสต็อกไม่พอ ไม่ได้เพิ่มในออเดอร์`);
+      try {
+        const result = await createWalkInOrder(type, lines);
+        if (result.unavailable.length > 0) {
+          setError(`${result.unavailable.join(", ")} มีสต็อกไม่พอ ไม่ได้เพิ่มในออเดอร์`);
+        }
+        if (result.orderId) router.push("/pos");
+      } catch (err) {
+        toast(err instanceof Error ? err.message : "สร้างออเดอร์ไม่สำเร็จ กรุณาลองใหม่", "error");
       }
-      if (result.orderId) router.push("/pos");
     });
   }
 

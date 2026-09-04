@@ -109,6 +109,18 @@ function isReadyForPayment(items: OrderItem[]): boolean {
   return items.length > 0 && items.every((i) => i.status === "SERVED");
 }
 
+/** Looks up one order item's current status directly from the board's own
+ *  (polled) order list — never computed/guessed, always read back from
+ *  server-confirmed data. Returns null if the item (or its order) isn't in
+ *  the list at all, e.g. the order was paid/cancelled since. */
+function findItemStatus(orderList: Order[], orderItemId: string): string | null {
+  for (const order of orderList) {
+    const item = order.items.find((i) => i.id === orderItemId);
+    if (item) return item.status;
+  }
+  return null;
+}
+
 export function PosBoard({
   initialOrders,
   menuItems,
@@ -126,18 +138,95 @@ export function PosBoard({
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [isPending, startTransition] = useTransition();
+  // Per-item in-flight tracking for the status-advance button — separate
+  // from `isPending` above (which stays shared, and still gates the
+  // checkout button exactly as before). Without this, `isPending` being one
+  // flag for the whole board meant every item's advance button re-enabled
+  // together, and a rapid re-tap on the same item (before the next 4s poll
+  // shows its new status) could silently skip a kitchen stage
+  // (PENDING straight to SERVED) since advanceOrderItemStatus recomputes
+  // "next" from whatever status the row currently has server-side.
+  //
+  // The actual re-entry guard is `inFlightItemIdsRef`, not this state: two
+  // calls to handleAdvance for the same item can happen before React has
+  // re-rendered with the previous setPendingItemIds update committed, so a
+  // check against `pendingItemIds` state alone would read the same stale
+  // (not-yet-added) value in both calls and let both through. A ref mutates
+  // synchronously and is visible to every call immediately, including ones
+  // in the same tick. `pendingItemIds` state still exists solely to drive
+  // the button's `disabled` rendering — React state is what triggers a
+  // re-render, a ref by itself does not.
+  //
+  // Maps orderItemId -> the status that item had at the moment its advance
+  // was submitted (not a Set): the server call succeeding is not enough to
+  // release the lock, because `orders` below is fed only by the 4s poll —
+  // router.refresh() does not update it (it re-renders the server tree, but
+  // this component's `orders` state was seeded once from props on mount and
+  // never re-adopts a later prop value). Releasing right when the promise
+  // settles would re-enable the button while it's still showing the OLD
+  // status/label, inviting a second tap that the server would then
+  // genuinely advance an extra stage. So the lock is only released once
+  // polled data confirms the change — see the poll callback below — by
+  // comparing against this captured snapshot, never by computing/guessing a
+  // next status.
+  const inFlightItemIdsRef = useRef<Map<string, string>>(new Map());
+  const [pendingItemIds, setPendingItemIds] = useState<Set<string>>(new Set());
   const [checkoutOrderId, setCheckoutOrderId] = useState<string | null>(null);
   const router = useRouter();
   const newOrderIds = useNewOrderAlert(orders);
   const checkoutOrder = orders.find((o) => o.id === checkoutOrderId) ?? null;
 
+  // Guards against overlapping polls applying out of order: the interval
+  // fires every 4s regardless of whether the previous fetch/response cycle
+  // finished, so a slower earlier-dispatched request's response can arrive
+  // after a faster later one's. Each poll captures the sequence number it
+  // was dispatched with; a response only applies (setOrders, lock
+  // confirmation) if that number is still the latest one dispatched by the
+  // time the response comes back — otherwise it's a superseded response and
+  // is discarded entirely, exactly as if it had never arrived.
+  const pollSeqRef = useRef(0);
+
   useEffect(() => {
     const interval = setInterval(async () => {
+      const seq = ++pollSeqRef.current;
       try {
         const res = await fetch("/api/staff/orders/active", { cache: "no-store" });
+        if (seq !== pollSeqRef.current) return; // superseded by a later poll — discard
         if (!res.ok) return;
         const data = await res.json();
-        setOrders(data.orders);
+        if (seq !== pollSeqRef.current) return; // superseded while awaiting res.json()
+        const freshOrders: Order[] = data.orders;
+
+        // Release an item's advance-lock only once this poll response
+        // itself confirms the change — either the item's status no longer
+        // matches what was captured at submission time (handleAdvance), or
+        // the item/order isn't in the list anymore (paid/cancelled
+        // meanwhile). A response that still shows the submitted status (a
+        // slow/stale one) must not release it. No fixed timeout, no
+        // client-computed "next" status — only ever a comparison against
+        // the snapshot captured at submit time. This runs here (inside the
+        // same async poll callback that already sets `orders`), not as a
+        // separate effect keyed on `orders`, since polled data is the only
+        // source of truth this check is allowed to use.
+        if (inFlightItemIdsRef.current.size > 0) {
+          const confirmed: string[] = [];
+          for (const [orderItemId, submittedStatus] of inFlightItemIdsRef.current) {
+            const currentStatus = findItemStatus(freshOrders, orderItemId);
+            if (currentStatus === null || currentStatus !== submittedStatus) {
+              confirmed.push(orderItemId);
+            }
+          }
+          if (confirmed.length > 0) {
+            for (const id of confirmed) inFlightItemIdsRef.current.delete(id);
+            setPendingItemIds((prev) => {
+              const next = new Set(prev);
+              for (const id of confirmed) next.delete(id);
+              return next;
+            });
+          }
+        }
+
+        setOrders(freshOrders);
       } catch {
         // ignore transient network errors while polling
       }
@@ -146,12 +235,26 @@ export function PosBoard({
   }, []);
 
   function handleAdvance(orderItemId: string) {
+    if (inFlightItemIdsRef.current.has(orderItemId)) return;
+    const submittedStatus = findItemStatus(orders, orderItemId);
+    if (submittedStatus === null) return; // not in the current board data — nothing to advance
+    inFlightItemIdsRef.current.set(orderItemId, submittedStatus);
+    setPendingItemIds((prev) => new Set(prev).add(orderItemId));
     startTransition(async () => {
       try {
         await advanceOrderItemStatus(orderItemId);
         router.refresh();
+        // Do not release the lock here — the write succeeding doesn't mean
+        // this board's own `orders` reflects it yet. The poll callback
+        // above releases it once polled data actually confirms the change.
       } catch (err) {
         toast(err instanceof Error ? err.message : "อัปเดตสถานะไม่สำเร็จ", "error");
+        inFlightItemIdsRef.current.delete(orderItemId);
+        setPendingItemIds((prev) => {
+          const next = new Set(prev);
+          next.delete(orderItemId);
+          return next;
+        });
       }
     });
   }
@@ -199,7 +302,7 @@ export function PosBoard({
                       <span className="text-(--text-success) text-xs shrink-0">เสิร์ฟแล้ว</span>
                     ) : (
                       <button
-                        disabled={isPending}
+                        disabled={pendingItemIds.has(item.id)}
                         onClick={() => handleAdvance(item.id)}
                         className="text-xs bg-(--surface-muted) rounded-full px-3 py-2 shrink-0 disabled:opacity-50"
                       >
