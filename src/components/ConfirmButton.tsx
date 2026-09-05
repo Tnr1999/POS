@@ -30,6 +30,7 @@ export function ConfirmButton({
   className = "text-sm text-(--text-danger) hover:underline",
   children,
   onSuccess,
+  disabled = false,
 }: {
   action: () => Promise<void>;
   confirmMessage: string;
@@ -40,6 +41,7 @@ export function ConfirmButton({
   className?: string;
   children: ReactNode;
   onSuccess?: () => void;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -59,7 +61,12 @@ export function ConfirmButton({
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={className}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+        className={`${className} disabled:opacity-50`}
+      >
         {children}
       </button>
       <Modal open={open} onClose={() => !isPending && setOpen(false)} title={confirmTitle}>

@@ -331,7 +331,7 @@ export function PosBoard({
                     confirmTitle="ยกเลิกออเดอร์"
                     confirmMessage={`ยกเลิกออเดอร์ของ${order.tableName ?? (order.type === "TAKEAWAY" ? "กลับบ้าน" : "หน้าร้าน")}? ลบแล้วกู้คืนไม่ได้`}
                     confirmLabel="ยกเลิกออเดอร์"
-                    className="text-sm text-(--text-danger) disabled:opacity-50 px-2"
+                    className="text-sm text-(--text-danger) disabled:opacity-50 px-3 min-h-11 inline-flex items-center justify-center"
                     onSuccess={() => router.refresh()}
                   >
                     ยกเลิก

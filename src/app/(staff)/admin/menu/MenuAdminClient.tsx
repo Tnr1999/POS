@@ -134,7 +134,7 @@ export function MenuAdminClient({
                   confirmTitle="ลบหมวดหมู่"
                   confirmMessage={`ลบหมวดหมู่ "${c.name}"? เมนู ${c.itemCount} รายการในหมวดนี้จะกลายเป็น "ไม่มีหมวดหมู่" (ไม่ถูกลบ)`}
                   confirmLabel="ลบหมวดหมู่"
-                  className="text-(--text-muted-2) hover:text-(--text-danger)"
+                  className="text-(--text-muted-2) hover:text-(--text-danger) min-w-11 min-h-11 inline-flex items-center justify-center"
                   onSuccess={() => router.refresh()}
                 >
                   <TrashIcon className="w-3.5 h-3.5" />
@@ -266,9 +266,10 @@ function MenuItemCard({
         <div className="flex items-center gap-1 pt-2 mt-auto border-t border-(--surface-border)">
           <button
             type="button"
+            disabled={isPending}
             onClick={onEdit}
             aria-label={`แก้ไข ${item.name}`}
-            className="flex-1 flex items-center justify-center gap-1 py-2 text-xs font-medium rounded-lg hover:bg-(--surface-muted)"
+            className="flex-1 flex items-center justify-center gap-1 py-2 text-xs font-medium rounded-lg hover:bg-(--surface-muted) disabled:opacity-50"
           >
             <EditIcon className="w-3.5 h-3.5" />
             แก้ไข
@@ -288,6 +289,7 @@ function MenuItemCard({
             confirmTitle="ลบเมนู"
             confirmMessage={`ลบเมนู "${item.name}"? ลบแล้วกู้คืนไม่ได้`}
             confirmLabel="ลบเมนู"
+            disabled={isPending}
             className="p-2 rounded-lg text-(--text-danger) hover:bg-(--surface-muted)"
           >
             <TrashIcon className="w-3.5 h-3.5" />
